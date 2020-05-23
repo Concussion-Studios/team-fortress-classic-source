@@ -1,4 +1,4 @@
-//========= Copyright Valve Corporation, All rights reserved. ============//
+//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		Projectile shot from the AR2 
 //
@@ -75,9 +75,7 @@ protected:
 	bool					m_bShotDelayed;
 	int						m_nVentPose;
 	
-#ifndef CLIENT_DLL
 	DECLARE_ACTTABLE();
-#endif
 };
 
 

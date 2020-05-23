@@ -6,17 +6,11 @@
 
 $Macro OUTBINNAME	"server"
 $Macro OUTBINDIR	"$SRCDIR\..\game\$GAMENAME\bin"
-$Macro DEVKITBINDIR	"$GAMENAME\bin"							[$X360]
-// It's important to include $GAMENAME in the generated_proto directory
-// to avoid race conditions when multiple games are in one solution.
-$Macro GENERATED_PROTO_DIR	"$SRCDIR\game\server\generated_proto_$GAMENAME"
 
 $MacroRequired "GAMENAME"
 
 $include "$SRCDIR\vpc_scripts\source_dll_base.vpc"
-$include "$SRCDIR\vpc_scripts\protobuf_builder.vpc"
 $Include "$SRCDIR\vpc_scripts\source_replay.vpc"	[$TF]
-$Include "$SRCDIR\game\protobuf_include.vpc"
 
 $Configuration	"Debug"
 {
@@ -438,6 +432,7 @@ $Project
 		$File	"lights.h"
 		$File	"locksounds.h"
 		$File	"logic_measure_movement.cpp"
+		$File	"logic_mirror_movement.cpp"
 		$File	"logic_navigation.cpp"
 		$File	"logicauto.cpp"
 		$File	"logicentities.cpp"
@@ -619,10 +614,6 @@ $Project
 		$File	"TemplateEntities.h"
 		$File	"tempmonster.cpp"
 		$File	"tesla.cpp"
-		$File	"$SRCDIR\game\shared\test_ehandle.cpp"
-		$File	"test_proxytoggle.cpp"
-		$File	"test_stressentities.cpp"
-		$File	"testfunctions.cpp"
 		$File	"testtraceline.cpp"
 		$File	"textstatsmgr.cpp"
 		$File	"timedeventmgr.cpp"
@@ -951,7 +942,6 @@ $Project
 		$File	"$SRCDIR\game\shared\takedamageinfo.h"
 		$File	"te_effect_dispatch.h"
 		$File	"tesla.h"
-		$File	"test_stressentities.h"
 		$File	"textstatsmgr.h"
 		$File	"$SRCDIR\public\texture_group_names.h"
 		$File	"timedeventmgr.h"

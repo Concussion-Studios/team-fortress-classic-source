@@ -1,4 +1,4 @@
-//========= Copyright Valve Corporation, All rights reserved. ============//
+//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -39,6 +39,7 @@
 
 extern void respawn(CBaseEntity *pEdict, bool fCopyCorpse);
 
+// Utility function
 extern bool FindInList( const char **pStrings, const char *pToFind );
 
 ConVar sv_hl2mp_weapon_respawn_time( "sv_hl2mp_weapon_respawn_time", "20", FCVAR_GAMEDLL | FCVAR_NOTIFY );
@@ -768,6 +769,24 @@ void CHL2MPRules::ClientSettingsChanged( CBasePlayer *pPlayer )
 	const char *pCurrentModel = modelinfo->GetModelName( pPlayer->GetModel() );
 	const char *szModelName = engine->GetClientConVarValue( engine->IndexOfEdict( pPlayer->edict() ), "cl_playermodel" );
 
+	//Andrew; Map our requested player model to the new model/player path.
+	char file[_MAX_PATH];
+	Q_strncpy( file, szModelName, sizeof(file) );
+	if ( Q_strnicmp( file, "models/player/", 14 ) )
+	{
+		char *substring = strstr( file, "models/" );
+		if ( substring )
+		{
+			// replace with new directory
+			const char *dirname = substring + strlen("models/");
+			*substring = 0;
+			char destpath[_MAX_PATH];
+			// player
+			Q_snprintf( destpath, sizeof(destpath), "models/player/%s", dirname);
+			szModelName = destpath;
+		}
+	}
+
 	//If we're different.
 	if ( stricmp( szModelName, pCurrentModel ) )
 	{
@@ -799,7 +818,7 @@ void CHL2MPRules::ClientSettingsChanged( CBasePlayer *pPlayer )
 		}
 		else
 		{
-			if ( Q_stristr( szModelName, "models/human") )
+			if ( Q_stristr( szModelName, "models/player/human") )
 			{
 				pHL2Player->ChangeTeam( TEAM_REBELS );
 			}
@@ -995,6 +1014,7 @@ CAmmoDef *GetAmmoDef()
 
 #ifndef CLIENT_DLL
 
+//Tony; Re-working restart game so that it cleans up safely, and then respawns everyone.
 void CHL2MPRules::RestartGame()
 {
 	// bounds check
@@ -1009,9 +1029,7 @@ void CHL2MPRules::RestartGame()
 		m_flGameStartTime.GetForModify() = 0.0f;
 	}
 
-	CleanUpMap();
-	
-	// now respawn all players
+	// Pre Map Cleanup
 	for (int i = 1; i <= gpGlobals->maxClients; i++ )
 	{
 		CHL2MP_Player *pPlayer = (CHL2MP_Player*) UTIL_PlayerByIndex( i );
@@ -1019,16 +1037,45 @@ void CHL2MPRules::RestartGame()
 		if ( !pPlayer )
 			continue;
 
-		if ( pPlayer->GetActiveWeapon() )
+		//Tony; if they aren't a spectator, make sure they get cleaned up before entities are removed!
+		if ( pPlayer->GetTeamNumber() != TEAM_SPECTATOR )
 		{
-			pPlayer->GetActiveWeapon()->Holster();
+				// If they're in a vehicle, make sure they get out!
+				if ( pPlayer->IsInAVehicle() )
+					pPlayer->LeaveVehicle();
+
+				QAngle angles = pPlayer->GetLocalAngles();
+
+				angles.x = 0;
+				angles.z = 0;
+
+				pPlayer->SetLocalAngles( angles );
+				CBaseCombatWeapon *pWeapon = (CBaseCombatWeapon*)pPlayer->GetActiveWeapon();
+				if (pWeapon)
+				{
+					pPlayer->Weapon_Detach( pWeapon );
+					UTIL_Remove( pWeapon );
+				}
 		}
-		pPlayer->RemoveAllItems( true );
-		respawn( pPlayer, false );
+		pPlayer->RemoveAllItems(true);
+		pPlayer->ClearActiveWeapon();
 		pPlayer->Reset();
 	}
 
-	// Respawn entities (glass, doors, etc..)
+	CleanUpMap();
+	
+	// now that everything is cleaned up, respawn everyone.
+	for (int i = 1; i <= gpGlobals->maxClients; i++ )
+	{
+		CHL2MP_Player *pPlayer = (CHL2MP_Player*) UTIL_PlayerByIndex( i );
+
+		if ( !pPlayer )
+			continue;
+
+		//Tony; if they aren't a spectator, respawn them.
+		if ( pPlayer->GetTeamNumber() != TEAM_SPECTATOR )
+			pPlayer->Spawn();
+	}
 
 	CTeam *pRebels = GetGlobalTeam( TEAM_REBELS );
 	CTeam *pCombine = GetGlobalTeam( TEAM_COMBINE );
