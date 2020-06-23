@@ -26,11 +26,6 @@ END_PREDICTION_DATA()
 LINK_ENTITY_TO_CLASS( weapon_umbrella, CTFCUmbrella );
 PRECACHE_WEAPON_REGISTER( weapon_umbrella );
 
-#ifndef CLIENT_DLL
-BEGIN_DATADESC( CTFCUmbrella )
-END_DATADESC()
-#endif
-
 // ----------------------------------------------------------------------------- //
 // CTFCUmbrella implementation.
 // ----------------------------------------------------------------------------- //

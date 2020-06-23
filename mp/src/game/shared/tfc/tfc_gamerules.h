@@ -44,8 +44,6 @@ public:
 			CTFCGameRules();
 	virtual ~CTFCGameRules();
 
-	virtual void Precache( void ) OVERRIDE;
-	virtual bool ClientCommand( CBaseEntity *pEdict, const CCommand &args ) OVERRIDE;
 	virtual const char *GetGameDescription(void) OVERRIDE{ return TFC_GAME_DESCRIPTION; }
 };
 

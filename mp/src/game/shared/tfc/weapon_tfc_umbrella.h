@@ -24,9 +24,6 @@ public:
 	DECLARE_CLASS( CTFCUmbrella, CTFCCrowbar );
 	DECLARE_NETWORKCLASS(); 
 	DECLARE_PREDICTABLE();	
-#ifndef CLIENT_DLL
-	DECLARE_DATADESC();
-#endif
 	
 	CTFCUmbrella();
 

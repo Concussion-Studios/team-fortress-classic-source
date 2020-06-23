@@ -18,10 +18,10 @@
 // ---------------------------------------------------------------------------------------------- //
 // Purpose: Player animation event. Sent to the client when a player fires, jumps, reloads, etc..
 // ---------------------------------------------------------------------------------------------- //
-class C_TEPlayerAnimEvent : public C_BaseTempEntity
+class C_TEPlayerAnimEvent_TFC : public C_BaseTempEntity
 {
 public:
-	DECLARE_CLASS( C_TEPlayerAnimEvent, C_BaseTempEntity );
+	DECLARE_CLASS( C_TEPlayerAnimEvent_TFC, C_BaseTempEntity );
 	DECLARE_CLIENTCLASS();
 
 	virtual void PostDataUpdate( DataUpdateType_t updateType ) OVERRIDE;

@@ -34,7 +34,7 @@
 // ------------------------------------------------------------------------------------------ //
 // Purpose: C_TEPlayerAnimEvent implementation.
 // ------------------------------------------------------------------------------------------ //
-void C_TEPlayerAnimEvent::PostDataUpdate( DataUpdateType_t updateType )
+void C_TEPlayerAnimEvent_TFC::PostDataUpdate( DataUpdateType_t updateType )
 {
 	// Create the effect.
 	C_TFCPlayer *pPlayer = dynamic_cast< C_TFCPlayer* >( m_hPlayer.Get() );
@@ -42,9 +42,9 @@ void C_TEPlayerAnimEvent::PostDataUpdate( DataUpdateType_t updateType )
 		pPlayer->DoAnimationEvent( (PlayerAnimEvent_t)m_iEvent.Get(), m_nData );
 }
 
-IMPLEMENT_CLIENTCLASS_EVENT( C_TEPlayerAnimEvent, DT_TEPlayerAnimEvent, CTEPlayerAnimEvent );
+IMPLEMENT_CLIENTCLASS_EVENT( C_TEPlayerAnimEvent_TFC, DT_TEPlayerAnimEvent_TFC, CTEPlayerAnimEvent_TFC );
 
-BEGIN_RECV_TABLE_NOBASE( C_TEPlayerAnimEvent, DT_TEPlayerAnimEvent )
+BEGIN_RECV_TABLE_NOBASE( C_TEPlayerAnimEvent_TFC, DT_TEPlayerAnimEvent_TFC )
 	RecvPropEHandle( RECVINFO( m_hPlayer ) ),
 	RecvPropInt( RECVINFO( m_iEvent ) ),
 	RecvPropInt( RECVINFO( m_nData ) )

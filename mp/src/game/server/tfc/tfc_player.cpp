@@ -21,29 +21,29 @@ LINK_ENTITY_TO_CLASS( info_player_blue, CPointEntity );
 // ------------------------------------------------------------------------------------------ //
 // Purpose: CTEPlayerAnimEvent implementation.
 // ------------------------------------------------------------------------------------------ //
-IMPLEMENT_SERVERCLASS_ST_NOBASE( CTEPlayerAnimEvent, DT_TEPlayerAnimEvent )
+IMPLEMENT_SERVERCLASS_ST_NOBASE( CTEPlayerAnimEvent_TFC, DT_TEPlayerAnimEvent_TFC )
 	SendPropEHandle( SENDINFO( m_hPlayer ) ),
 	SendPropInt( SENDINFO( m_iEvent ), Q_log2( PLAYERANIMEVENT_COUNT ) + 1, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO( m_nData ), 32 )
 END_SEND_TABLE()
 
-static CTEPlayerAnimEvent g_TEPlayerAnimEvent( "PlayerAnimEvent" );
+static CTEPlayerAnimEvent_TFC g_TETFCPlayerAnimEvent( "PlayerAnimEvent" );
 
-void TE_PlayerAnimEvent( CBasePlayer *pPlayer, PlayerAnimEvent_t event, int nData )
+void TE_TFC_PlayerAnimEvent( CBasePlayer *pPlayer, PlayerAnimEvent_t event, int nData )
 {
 	CPVSFilter filter( pPlayer->EyePosition() );
 	
 	// The player himself doesn't need to be sent his animation events 
 	// unless tfc_showanimstate wants to show them.
-	if ( cl_showanimstate.GetInt() == pPlayer->entindex() )
+	//if ( cl_showanimstate.GetInt() == pPlayer->entindex() )
 	{
 		filter.RemoveRecipient( pPlayer );
 	}
 
-	g_TEPlayerAnimEvent.m_hPlayer = pPlayer;
-	g_TEPlayerAnimEvent.m_iEvent = event;
-	g_TEPlayerAnimEvent.m_nData = nData;
-	g_TEPlayerAnimEvent.Create( filter, 0 );
+	g_TETFCPlayerAnimEvent.m_hPlayer = pPlayer;
+	g_TETFCPlayerAnimEvent.m_iEvent = event;
+	g_TETFCPlayerAnimEvent.m_nData = nData;
+	g_TETFCPlayerAnimEvent.Create( filter, 0 );
 }
 
 // -------------------------------------------------------------------------------- //

@@ -169,7 +169,8 @@ void CTFCPlayerAnimState::DoAnimationEvent( PlayerAnimEvent_t event, int nData )
 		m_bFirstJumpFrame = true;
 		m_flJumpStartTime = gpGlobals->curtime;
 	}
-	else if ( event == PLAYERANIMEVENT_FIRE_GUN )
+	//else if ( event == PLAYERANIMEVENT_FIRE_GUN )
+	else if ( event == PLAYERANIMEVENT_ATTACK_PRIMARY )
 	{
 		// The middle part of the aim layer sequence becomes "shoot" until that animation is complete.
 		m_bFiring = true;

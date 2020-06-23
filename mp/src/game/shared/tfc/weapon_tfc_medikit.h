@@ -30,7 +30,6 @@ public:
 	
 	CTFCMedikit();
 
-	virtual void Precache();
 	virtual TFCWeaponID GetWeaponID( void ) const { return WEAPON_MEDIKIT; }
 
 

@@ -21,15 +21,15 @@ class CTFCPlayer;
 // -------------------------------------------------------------------------------- //
 // Player animation event. Sent to the client when a player fires, jumps, reloads, etc..
 // -------------------------------------------------------------------------------- //
-class CTEPlayerAnimEvent : public CBaseTempEntity
+class CTEPlayerAnimEvent_TFC : public CBaseTempEntity
 {
 public:
-	DECLARE_CLASS( CTEPlayerAnimEvent, CBaseTempEntity );
+	DECLARE_CLASS( CTEPlayerAnimEvent_TFC, CBaseTempEntity );
 	DECLARE_SERVERCLASS();
 
-	CTEPlayerAnimEvent( const char *name ) : CBaseTempEntity( name ) {}
+	CTEPlayerAnimEvent_TFC( const char *name ) : CBaseTempEntity( name ) {}
 
-	CNetworkHandle(CBasePlayer, m_hPlayer );
+	CNetworkHandle( CBasePlayer, m_hPlayer );
 	CNetworkVar( int, m_iEvent );
 	CNetworkVar( int, m_nData );
 };

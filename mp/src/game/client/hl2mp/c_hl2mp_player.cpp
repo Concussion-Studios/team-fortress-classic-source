@@ -30,7 +30,9 @@
 #define FLASHLIGHT_DISTANCE 1000
 #define CYCLELATCH_TOLERANCE		0.15f
 
+#ifndef TFC_DLL
 LINK_ENTITY_TO_CLASS( player, C_HL2MP_Player );
+#endif // !TFC_DLL
 
 BEGIN_RECV_TABLE_NOBASE( C_HL2MP_Player, DT_HL2MPLocalPlayerExclusive )
 	RecvPropVector( RECVINFO_NAME( m_vecNetworkOrigin, m_vecOrigin ) ),

@@ -33,10 +33,6 @@
 	#include "hl2mp_gameinterface.h"
 	#include "hl2mp_cvars.h"
 
-#ifdef DEBUG	
-	#include "hl2mp_bot_temp.h"
-#endif
-
 extern void respawn(CBaseEntity *pEdict, bool fCopyCorpse);
 
 // Utility function
@@ -923,6 +919,7 @@ bool CHL2MPRules::ClientCommand( CBaseEntity *pEdict, const CCommand &args )
 	return false;
 }
 
+#ifndef TFC_DLL
 // shared ammo definition
 // JAY: Trying to make a more physical bullet response
 #define BULLET_MASS_GRAINS_TO_LB(grains)	(0.002285*(grains)/16.0f)
@@ -958,58 +955,27 @@ CAmmoDef *GetAmmoDef()
 
 	return &def;
 }
-
-#ifdef CLIENT_DLL
-
-	ConVar cl_autowepswitch(
-		"cl_autowepswitch",
-		"1",
-		FCVAR_ARCHIVE | FCVAR_USERINFO,
-		"Automatically switch to picked up weapons (if more powerful)" );
-
-#else
-
-#ifdef DEBUG
-
-	// Handler for the "bot" command.
-	void Bot_f()
-	{		
-		// Look at -count.
-		int count = 1;
-		count = clamp( count, 1, 16 );
-
-		int iTeam = TEAM_COMBINE;
-				
-		// Look at -frozen.
-		bool bFrozen = false;
-			
-		// Ok, spawn all the bots.
-		while ( --count >= 0 )
-		{
-			BotPutInServer( bFrozen, iTeam );
-		}
-	}
-
-
-	ConCommand cc_Bot( "bot", Bot_f, "Add a bot.", FCVAR_CHEAT );
-
 #endif
 
-	bool CHL2MPRules::FShouldSwitchWeapon( CBasePlayer *pPlayer, CBaseCombatWeapon *pWeapon )
-	{		
-		if ( pPlayer->GetActiveWeapon() && pPlayer->IsNetClient() )
-		{
-			// Player has an active item, so let's check cl_autowepswitch.
-			const char *cl_autowepswitch = engine->GetClientConVarValue( engine->IndexOfEdict( pPlayer->edict() ), "cl_autowepswitch" );
-			if ( cl_autowepswitch && atoi( cl_autowepswitch ) <= 0 )
-			{
-				return false;
-			}
-		}
-
-		return BaseClass::FShouldSwitchWeapon( pPlayer, pWeapon );
+#ifdef CLIENT_DLL
+ConVar cl_autowepswitch(
+	"cl_autowepswitch",
+	"1",
+	FCVAR_ARCHIVE | FCVAR_USERINFO,
+	"Automatically switch to picked up weapons (if more powerful)" );
+#else
+bool CHL2MPRules::FShouldSwitchWeapon( CBasePlayer *pPlayer, CBaseCombatWeapon *pWeapon )
+{		
+	if ( pPlayer->GetActiveWeapon() && pPlayer->IsNetClient() )
+	{
+		// Player has an active item, so let's check cl_autowepswitch.
+		const char *cl_autowepswitch = engine->GetClientConVarValue( engine->IndexOfEdict( pPlayer->edict() ), "cl_autowepswitch" );
+		if ( cl_autowepswitch && atoi( cl_autowepswitch ) <= 0 )
+			return false;
 	}
 
+	return BaseClass::FShouldSwitchWeapon( pPlayer, pWeapon );
+}
 #endif
 
 #ifndef CLIENT_DLL

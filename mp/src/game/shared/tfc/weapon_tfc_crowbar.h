@@ -24,9 +24,6 @@ public:
 	DECLARE_CLASS( CTFCCrowbar, CWeaponTFCBaseMelee );
 	DECLARE_NETWORKCLASS(); 
 	DECLARE_PREDICTABLE();	
-#ifndef CLIENT_DLL
-	DECLARE_DATADESC();
-#endif
 
 	CTFCCrowbar();
 

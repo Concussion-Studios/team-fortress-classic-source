@@ -44,11 +44,13 @@ public:
 	CHL2MP_Player();
 	~CHL2MP_Player( void );
 	
+#ifndef TFC_DLL
 	static CHL2MP_Player *CreatePlayer( const char *className, edict_t *ed )
 	{
 		CHL2MP_Player::s_PlayerEdict = ed;
-		return (CHL2MP_Player*)CreateEntityByName( className );
+		return ( CHL2MP_Player* )CreateEntityByName( className );
 	}
+#endif // !TFC_DLL
 
 	DECLARE_SERVERCLASS();
 	DECLARE_DATADESC();

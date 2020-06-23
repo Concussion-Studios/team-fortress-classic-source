@@ -10,6 +10,7 @@
 #endif
 
 #include "convar.h"
+#include "multiplayer_animstate.h"
 #include "iplayeranimstate.h"
 
 #if defined( CLIENT_DLL )
@@ -19,7 +20,9 @@
 	class CTFCPlayer;
 #endif
 
-enum PlayerAnimEvent_t
+#define PLAYERANIMEVENT_FIRE_GUN PLAYERANIMEVENT_ATTACK_PRIMARY
+
+/*enum PlayerAnimEvent_t
 {
 	PLAYERANIMEVENT_FIRE_GUN=0,
 	PLAYERANIMEVENT_THROW_GRENADE,
@@ -28,7 +31,7 @@ enum PlayerAnimEvent_t
 	PLAYERANIMEVENT_DIE,
 	
 	PLAYERANIMEVENT_COUNT
-};
+};*/
 
 class ITFCPlayerAnimState : virtual public IPlayerAnimState
 {

@@ -83,22 +83,6 @@ CTFCGameRules::~CTFCGameRules( void )
 #endif
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CTFCGameRules::Precache( void )
-{
-	BaseClass::Precache();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-bool CTFCGameRules::ClientCommand( CBaseEntity *pEdict, const CCommand &args )
-{
-	return BaseClass::ClientCommand( pEdict, args );
-}
-
 // shared ammo definition
 // JAY: Trying to make a more physical bullet response
 #define BULLET_MASS_GRAINS_TO_LB(grains)	(0.002285*(grains)/16.0f)
@@ -117,6 +101,14 @@ CAmmoDef *GetAmmoDef()
 	if ( !bInitted )
 	{
 		bInitted = true;
+		
+		// Start at 1 here and skip the dummy ammo type to make CAmmoDef use the same indices
+		// as our #defines.
+		for ( int i=1; i < AMMO_LAST; i++ )
+		{
+			def.AddAmmoType( g_aAmmoNames[i], DMG_BULLET, TRACER_LINE, 0, 0, "ammo_max", 2400, 10, 14 );
+			Assert( def.Index( g_aAmmoNames[i] ) == i );
+		}
 	}
 
 	return &def;

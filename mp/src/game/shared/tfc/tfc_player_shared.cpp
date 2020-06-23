@@ -14,7 +14,7 @@
 	#include "c_tfc_player.h"
 #else
 	#include "tfc_player.h"
-	void TE_PlayerAnimEvent( CBasePlayer *pPlayer, PlayerAnimEvent_t event, int nData );
+	void TE_TFC_PlayerAnimEvent( CBasePlayer *pPlayer, PlayerAnimEvent_t event, int nData );
 #endif
 
 #ifdef CLIENT_DLL
@@ -50,7 +50,7 @@ void CTFCPlayer::DoAnimationEvent( PlayerAnimEvent_t event, int nData )
 {
 	m_PlayerAnimState->DoAnimationEvent( event, nData );
 #ifdef GAME_DLL
-	TE_PlayerAnimEvent( this, event, nData );	// Send to any clients who can see this guy.  
+	TE_TFC_PlayerAnimEvent( this, event, nData );	// Send to any clients who can see this guy.  
 #endif // GAME_DLL
 }
 

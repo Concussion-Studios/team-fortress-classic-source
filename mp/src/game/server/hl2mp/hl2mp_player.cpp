@@ -44,9 +44,11 @@ extern int	gEvilImpulse101;
 #define HL2MP_PUSHAWAY_THINK_CONTEXT	"HL2MPPushawayThink"
 #define CYCLELATCH_UPDATE_INTERVAL	0.2f
 
+#ifndef TFC_DLL
 void DropPrimedFragGrenade( CHL2MP_Player *pPlayer, CBaseCombatWeapon *pGrenade );
 
 LINK_ENTITY_TO_CLASS( player, CHL2MP_Player );
+#endif
 
 LINK_ENTITY_TO_CLASS( info_player_combine, CPointEntity );
 LINK_ENTITY_TO_CLASS( info_player_rebel, CPointEntity );
@@ -1067,20 +1069,21 @@ void CHL2MP_Player::FlashlightTurnOff( void )
 
 void CHL2MP_Player::Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector *pvecTarget, const Vector *pVelocity )
 {
+#ifndef TFC_DLL
 	//Drop a grenade if it's primed.
 	if ( GetActiveWeapon() )
 	{
-		CBaseCombatWeapon *pGrenade = Weapon_OwnsThisType("weapon_frag");
-
+		CBaseCombatWeapon *pGrenade = Weapon_OwnsThisType( "weapon_frag" );
 		if ( GetActiveWeapon() == pGrenade )
 		{
-			if ( ( m_nButtons & IN_ATTACK ) || (m_nButtons & IN_ATTACK2) )
+			if ( ( m_nButtons & IN_ATTACK ) || ( m_nButtons & IN_ATTACK2 ) )
 			{
 				DropPrimedFragGrenade( this, pGrenade );
 				return;
 			}
 		}
 	}
+#endif // !TFC_DLL
 
 	BaseClass::Weapon_Drop( pWeapon, pvecTarget, pVelocity );
 }

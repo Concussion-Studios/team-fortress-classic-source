@@ -18,9 +18,9 @@ static ConVar tfc_crowbar_damage_next( "tfc_crowbar_damage_next", "12.5", 0, "Cr
 // ----------------------------------------------------------------------------- //
 // CTFCCrowbar tables.
 // ----------------------------------------------------------------------------- //
-IMPLEMENT_NETWORKCLASS_ALIASED( TFCCrowbar, DT_WeaponCrowbar )
+IMPLEMENT_NETWORKCLASS_ALIASED( TFCCrowbar, DT_TFCCrowbar )
 
-BEGIN_NETWORK_TABLE( CTFCCrowbar, DT_WeaponCrowbar )
+BEGIN_NETWORK_TABLE( CTFCCrowbar, DT_TFCCrowbar )
 END_NETWORK_TABLE()
 
 BEGIN_PREDICTION_DATA( CTFCCrowbar )
