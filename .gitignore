@@ -13,12 +13,17 @@
 *.ilk
 *.lastbuildstate
 vc100.pdb
+vc120.pdb
 ipch
 *.sdf
 *.opensdf
 *.idb
 *.vcxproj
 *.sln
+*.vpc_crc
+*.sentinel
+*.filters
+*.db
 
 # OSX/Linux build products
 *.mak
@@ -54,3 +59,7 @@ config.cfg
 # shader files
 *.tmp
 
+vgui_controls.lib
+tier1.lib
+raytrace.lib
+mathlib.lib
