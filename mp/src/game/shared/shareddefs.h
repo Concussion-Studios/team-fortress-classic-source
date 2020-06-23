@@ -102,7 +102,7 @@ public:
 
 #define MAX_CLIMB_SPEED		200
 
-#if defined(TF_DLL) || defined(TF_CLIENT_DLL)
+#if defined(TF_DLL) || defined(TF_CLIENT_DLL) || defined(TFC_DLL)
 	#define TIME_TO_DUCK		0.2
 	#define TIME_TO_DUCK_MS		200.0f
 #else
@@ -228,6 +228,8 @@ enum CastVote
 //Since this is decided by the gamerules (and it can be whatever number as long as its less than MAX_PLAYERS).
 #if defined( CSTRIKE_DLL )
 	#define MAX_PLAYERS				65  // Absolute max players supported
+#elif TFC_DLL
+	#define MAX_PLAYERS				TFC_MAX_PLAYERS  // Absolute max players supported
 #else
 	#define MAX_PLAYERS				33  // Absolute max players supported
 #endif
@@ -363,24 +365,33 @@ enum PLAYER_ANIM
 	PLAYER_LEAVE_AIMING,
 };
 
-#ifdef HL2_DLL
-// HL2 has 600 gravity by default
-// NOTE: The discrete ticks can have quantization error, so these numbers are biased a little to
-// make the heights more exact
-#define PLAYER_FATAL_FALL_SPEED		922.5f // approx 60 feet sqrt( 2 * gravity * 60 * 12 )
-#define PLAYER_MAX_SAFE_FALL_SPEED	526.5f // approx 20 feet sqrt( 2 * gravity * 20 * 12 )
-#define PLAYER_LAND_ON_FLOATING_OBJECT	173 // Can fall another 173 in/sec without getting hurt
-#define PLAYER_MIN_BOUNCE_SPEED		173
-#define PLAYER_FALL_PUNCH_THRESHOLD 303.0f // won't punch player's screen/make scrape noise unless player falling at least this fast - at least a 76" fall (sqrt( 2 * g * 76))
+#ifdef TFC_DLL
+	// TFC uses hl2 gravity
+	#define PLAYER_FATAL_FALL_SPEED		922.5f // approx 60 feet sqrt( 2 * gravity * 60 * 12 )
+	#define PLAYER_MAX_SAFE_FALL_SPEED	526.5f // approx 20 feet sqrt( 2 * gravity * 20 * 12 )
+	#define PLAYER_LAND_ON_FLOATING_OBJECT	173 // Can fall another 173 in/sec without getting hurt
+	#define PLAYER_MIN_BOUNCE_SPEED		173
+	#define PLAYER_FALL_PUNCH_THRESHOLD 303.0f // won't punch player's screen/make scrape noise unless player falling at least this fast - at least a 76" fall (sqrt( 2 * g * 76))
 #else
-#define PLAYER_FATAL_FALL_SPEED		1024 // approx 60 feet
-#define PLAYER_MAX_SAFE_FALL_SPEED	580 // approx 20 feet
-#define PLAYER_LAND_ON_FLOATING_OBJECT	200 // Can go another 200 units without getting hurt
-#define PLAYER_MIN_BOUNCE_SPEED		200
-#define PLAYER_FALL_PUNCH_THRESHOLD (float)350 // won't punch player's screen/make scrape noise unless player falling at least this fast.
-#endif
-#define DAMAGE_FOR_FALL_SPEED		100.0f / ( PLAYER_FATAL_FALL_SPEED - PLAYER_MAX_SAFE_FALL_SPEED ) // damage per unit per second.
+#ifdef HL2_DLL
+	// HL2 has 600 gravity by default
+	// NOTE: The discrete ticks can have quantization error, so these numbers are biased a little to
+	// make the heights more exact
+	#define PLAYER_FATAL_FALL_SPEED		922.5f // approx 60 feet sqrt( 2 * gravity * 60 * 12 )
+	#define PLAYER_MAX_SAFE_FALL_SPEED	526.5f // approx 20 feet sqrt( 2 * gravity * 20 * 12 )
+	#define PLAYER_LAND_ON_FLOATING_OBJECT	173 // Can fall another 173 in/sec without getting hurt
+	#define PLAYER_MIN_BOUNCE_SPEED		173
+	#define PLAYER_FALL_PUNCH_THRESHOLD 303.0f // won't punch player's screen/make scrape noise unless player falling at least this fast - at least a 76" fall (sqrt( 2 * g * 76))
+#else
+	#define PLAYER_FATAL_FALL_SPEED		1024 // approx 60 feet
+	#define PLAYER_MAX_SAFE_FALL_SPEED	580 // approx 20 feet
+	#define PLAYER_LAND_ON_FLOATING_OBJECT	200 // Can go another 200 units without getting hurt
+	#define PLAYER_MIN_BOUNCE_SPEED		200
+	#define PLAYER_FALL_PUNCH_THRESHOLD (float)350 // won't punch player's screen/make scrape noise unless player falling at least this fast.
+#endif // HL2_DLL
+#endif // TFC_DLL
 
+#define DAMAGE_FOR_FALL_SPEED		100.0f / ( PLAYER_FATAL_FALL_SPEED - PLAYER_MAX_SAFE_FALL_SPEED ) // damage per unit per second.
 
 #define AUTOAIM_2DEGREES  0.0348994967025
 #define AUTOAIM_5DEGREES  0.08715574274766
@@ -523,11 +534,20 @@ typedef enum
 } USE_TYPE;
 
 // basic team colors
+#ifdef TFC_DLL
+#define COLOR_RED		COLOR_TFC_RED
+#define COLOR_BLUE		COLOR_TFC_RED
+#else
 #define COLOR_RED		Color(255, 64, 64, 255)
 #define COLOR_BLUE		Color(153, 204, 255, 255)
+#endif
 #define COLOR_YELLOW	Color(255, 178, 0, 255)
 #define COLOR_GREEN		Color(153, 255, 153, 255)
+#ifdef TFC_DLL
+#define COLOR_GREY		COLOR_SPECTATOR
+#else
 #define COLOR_GREY		Color(204, 204, 204, 255)
+#endif
 #define COLOR_WHITE		Color(255, 255, 255, 255)
 #define COLOR_BLACK		Color(0, 0, 0, 255)
 
@@ -934,11 +954,6 @@ enum tprbGameInfo_e
 #define TPRB_STATE_ROUNDRESET			(1<<6)
 #define TPRB_STATE_WAITINGREADYSTART	(1<<7)
 
-//Tony; including sdk_shareddefs.h because I use it in a _lot_ of places that needs to be seen before many other things.
-#ifdef SDK_DLL
-#include "sdk_shareddefs.h"
-#endif
-
 #define TEAM_TRAIN_MAX_TEAMS			4
 #define TEAM_TRAIN_MAX_HILLS			5
 #define TEAM_TRAIN_FLOATS_PER_HILL		2
@@ -984,5 +999,9 @@ enum
 	MAX_VISION_MODES
 };
 #endif // TF_DLL || TF_CLIENT_DLL
+
+#ifdef TFC_DLL
+#include "tfc_shareddefs.h"
+#endif
 
 #endif // SHAREDDEFS_H

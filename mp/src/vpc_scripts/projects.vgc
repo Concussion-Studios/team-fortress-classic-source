@@ -10,12 +10,12 @@
 
 $Project "client"
 {
-	"game\client\client_hl2mp.vpc"		[($WIN32||$POSIX) && $HL2MP]
+	"game\client\client_tfc.vpc"		[($WIN32||$POSIX) && $TFC]
 }
 
 $Project "server"
 {
-	"game\server\server_hl2mp.vpc"		[($WIN32||$POSIX) && $HL2MP]
+	"game\server\server_tfc.vpc"		[($WIN32||$POSIX) && $TFC]
 }
 
 $Project "mathlib"

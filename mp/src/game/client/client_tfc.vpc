@@ -1,12 +1,11 @@
 //-----------------------------------------------------------------------------
-//	CLIENT_HL2MP.VPC
+//	CLIENT_TFC.VPC
 //
 //	Project Script
 //-----------------------------------------------------------------------------
 
 $Macro SRCDIR		"..\.."
-$Macro GAMENAME 	"hl2mp" [!$SOURCESDK]
-$Macro GAMENAME 	"mod_hl2mp" [$SOURCESDK]
+$Macro GAMENAME 	"tfc"
 
 $Include "$SRCDIR\game\client\client_base.vpc"
 
@@ -14,12 +13,14 @@ $Configuration
 {
 	$Compiler
 	{
-		$AdditionalIncludeDirectories		"$BASE;hl2mp\ui,.\hl2mp,$SRCDIR\game\shared\hl2mp,.\hl2,.\hl2\elements,$SRCDIR\game\shared\hl2;$SRCDIR\game\shared\Multiplayer"
+		$AdditionalIncludeDirectories		"$BASE;.\hl2mp\ui,.\hl2mp,$SRCDIR\game\shared\hl2mp,.\hl2,.\hl2\elements,$SRCDIR\game\shared\hl2,$SRCDIR\game\shared\Multiplayer"
 		$PreprocessorDefinitions			"$BASE;HL2MP;HL2_CLIENT_DLL"
+		$AdditionalIncludeDirectories		"$BASE;.\tfc,$SRCDIR\game\shared\tfc"
+		$PreprocessorDefinitions			"$BASE;TFC_DLL"
 	}
 }
 
-$Project "Client (HL2MP)"
+$Project "Client"
 {
 	$Folder	"Source Files"
 	{
@@ -114,6 +115,60 @@ $Project "Client (HL2MP)"
 			$File	"hl2\vgui_rootpanel_hl2.cpp"
 		}
 
+		$Folder	"Team Fortress Classic"
+		{
+			$File	"tfc\c_tfc_player.cpp"
+			$File	"tfc\c_tfc_player.h"
+			$File	"tfc\c_tfc_playerclass.cpp"
+			$File	"tfc\c_tfc_playerclass.h"
+			$File	"$SRCDIR\game\shared\tfc\tfc_playeranimstate.cpp"
+			$File	"$SRCDIR\game\shared\tfc\tfc_playeranimstate.h"
+			$File	"$SRCDIR\game\shared\tfc\tfc_gamerules.cpp"
+			$File	"$SRCDIR\game\shared\tfc\tfc_gamerules.h"
+			$File	"$SRCDIR\game\shared\tfc\tfc_player_shared.cpp"
+			$File	"$SRCDIR\game\shared\tfc\tfc_player_shared.h"
+			$File	"$SRCDIR\game\shared\tfc\tfc_playerclass_parse.cpp"
+			$File	"$SRCDIR\game\shared\tfc\tfc_playerclass_parse.h"
+			$File	"$SRCDIR\game\shared\tfc\tfc_shareddefs.cpp"
+			$File	"$SRCDIR\game\shared\tfc\tfc_shareddefs.h"
+			
+			$Folder	"Weapons"
+			{
+				$File	"tfc\tfc_fx_shelleject.cpp"
+				$File	"tfc\tfc_fx_knifeslash.cpp"
+				$File	"$SRCDIR\game\shared\tfc\weapon_tfcbase.cpp"
+				$File	"$SRCDIR\game\shared\tfc\weapon_tfcbase.h"
+				$File	"$SRCDIR\game\shared\tfc\weapon_tfcbasemelee.cpp"
+				$File	"$SRCDIR\game\shared\tfc\weapon_tfcbasemelee.h"
+				$File	"$SRCDIR\game\shared\tfc\weapon_tfc_minigun.cpp"
+				$File	"$SRCDIR\game\shared\tfc\weapon_tfc_minigun.h"
+				$File	"$SRCDIR\game\shared\tfc\weapon_tfc_nailgun.cpp"
+				$File	"$SRCDIR\game\shared\tfc\weapon_tfc_nailgun.h"
+				$File	"$SRCDIR\game\shared\tfc\weapon_tfc_super_nailgun.cpp"
+				$File	"$SRCDIR\game\shared\tfc\weapon_tfc_super_nailgun.h"
+				$File	"$SRCDIR\game\shared\tfc\weapon_tfc_shotgun.cpp"
+				$File	"$SRCDIR\game\shared\tfc\weapon_tfc_shotgun.h"
+				$File	"$SRCDIR\game\shared\tfc\weapon_tfc_super_shotgun.cpp"
+				$File	"$SRCDIR\game\shared\tfc\weapon_tfc_super_shotgun.h"
+				$File	"$SRCDIR\game\shared\tfc\weapon_tfc_grenadelauncher.cpp"
+				$File	"$SRCDIR\game\shared\tfc\weapon_tfc_grenadelauncher.h"
+
+				$Folder	"Melee"
+				{
+					$File	"$SRCDIR\game\shared\tfc\weapon_tfc_crowbar.cpp"
+					$File	"$SRCDIR\game\shared\tfc\weapon_tfc_crowbar.h"
+					$File	"$SRCDIR\game\shared\tfc\weapon_tfc_knife.cpp"
+					$File	"$SRCDIR\game\shared\tfc\weapon_tfc_knife.h"
+					$File	"$SRCDIR\game\shared\tfc\weapon_tfc_spanner.cpp"
+					$File	"$SRCDIR\game\shared\tfc\weapon_tfc_spanner.h"
+					$File	"$SRCDIR\game\shared\tfc\weapon_tfc_medikit.cpp"
+					$File	"$SRCDIR\game\shared\tfc\weapon_tfc_medikit.h"
+					$File	"$SRCDIR\game\shared\tfc\weapon_tfc_umbrella.cpp"
+					$File	"$SRCDIR\game\shared\tfc\weapon_tfc_umbrella.h"
+				}
+			}
+		}
+
 		$Folder	"HL2MP"
 		{
 			$File	"hl2mp\c_hl2mp_player.cpp"
@@ -127,19 +182,14 @@ $Project "Client (HL2MP)"
 			$File	"$SRCDIR\game\shared\hl2mp\hl2mp_player_shared.h"
 			$File	"$SRCDIR\game\shared\hl2mp\hl2mp_weapon_parse.cpp"
 			$File	"$SRCDIR\game\shared\hl2mp\hl2mp_weapon_parse.h"
-			$File	"$SRCDIR\game\shared\Multiplayer\multiplayer_animstate.cpp"
-			$File	"$SRCDIR\game\shared\Multiplayer\multiplayer_animstate.h"
 			$File	"$SRCDIR\game\shared\hl2mp\hl2mp_playeranimstate.cpp"
 			$File	"$SRCDIR\game\shared\hl2mp\hl2mp_playeranimstate.h"
+			$File	"$SRCDIR\game\shared\Multiplayer\multiplayer_animstate.cpp"
+			$File	"$SRCDIR\game\shared\Multiplayer\multiplayer_animstate.h"
 
 			$Folder	"Weapons"
 			{
-				$File	"$SRCDIR\game\shared\hl2mp\weapon_357.cpp"
-				$File	"$SRCDIR\game\shared\hl2mp\weapon_ar2.cpp"
-				$File	"$SRCDIR\game\shared\hl2mp\weapon_ar2.h"
-				$File	"$SRCDIR\game\shared\hl2mp\weapon_crossbow.cpp"
 				$File	"$SRCDIR\game\shared\hl2mp\weapon_crowbar.cpp"
-				$File	"$SRCDIR\game\shared\hl2mp\weapon_frag.cpp"
 				$File	"$SRCDIR\game\shared\hl2mp\weapon_hl2mpbase.cpp"
 				$File	"$SRCDIR\game\shared\hl2mp\weapon_hl2mpbase.h"
 				$File	"$SRCDIR\game\shared\hl2mp\weapon_hl2mpbase_machinegun.cpp"
@@ -149,14 +199,8 @@ $Project "Client (HL2MP)"
 				$File	"$SRCDIR\game\shared\hl2mp\weapon_hl2mpbasehlmpcombatweapon.h"
 				$File	"$SRCDIR\game\shared\hl2mp\weapon_physcannon.cpp"
 				$File	"$SRCDIR\game\shared\hl2mp\weapon_physcannon.h"
-				$File	"$SRCDIR\game\shared\hl2mp\weapon_pistol.cpp"
 				$File	"$SRCDIR\game\shared\hl2mp\weapon_rpg.cpp"
 				$File	"$SRCDIR\game\shared\hl2mp\weapon_rpg.h"
-				$File	"$SRCDIR\game\shared\hl2mp\weapon_shotgun.cpp"
-				$File	"$SRCDIR\game\shared\hl2mp\weapon_slam.cpp"
-				$File	"$SRCDIR\game\shared\hl2mp\weapon_slam.h"
-				$File	"$SRCDIR\game\shared\hl2mp\weapon_smg1.cpp"
-				$File	"$SRCDIR\game\shared\hl2mp\weapon_stunstick.cpp"
 			}
 
 			$Folder	"UI"
