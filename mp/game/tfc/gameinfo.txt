@@ -1,16 +1,16 @@
 "GameInfo"
 {
-	game	"My First HL2MP Mod"
-	title	"HALF+LIFE'"
-	title2	"deathmatch mod"
+	game "Team Fortress Classic: Source"
 	type multiplayer_only
-	GameData	"hl2mp.fgd"
-	InstancePath "maps/instances/"
+	gamelogo 1
 
 	nomodels 0
 	nohimodel 1
 	nocrosshair 1
-	supportsvr	1
+	supportsvr	0
+	
+	GameData	"tfc.fgd"
+	InstancePath "maps/instances/"
 
 	hidden_maps
 	{
@@ -23,18 +23,22 @@
 		SteamAppId				243750
 		
 		//
-		// Setup engine search paths.
+		// The code that loads this file automatically does a few things here:
 		//
-		// If a search path contains "_english", and the current language is not english, then
-		// another search path will be inserted above the english one by replacing "_english" with
-		// the appropriate language.
+		// 1. For each "Game" search path, it adds a "GameBin" path, in <dir>\bin
+		// 2. For each "Game" search path, it adds another "Game" path in front of it with _<langage> at the end.
+		//    For example: c:\hl2\cstrike on a french machine would get a c:\hl2\cstrike_french path added to it.
+		// 3. For the first "Game" search path, it adds a search path called "MOD".
+		// 4. For the first "Game" search path, it adds a search path called "DEFAULT_WRITE_PATH".
 		//
-		// To debug how the engine has parsed this file, type "path" at the console.
+
 		//
 		// Search paths are relative to the base directory, which is where hl2.exe is found.
 		//
 		// |gameinfo_path| points at the directory where gameinfo.txt is.
-		// |all_source_engine_paths| points at the directory cintaining HL2 shared content.
+		// We always want to mount that directory relative to gameinfo.txt, so
+		// people can mount stuff in c:\mymod, and the main game resources are in
+		// someplace like c:\program files\valve\steam\steamapps\half-life 2.
 		//
 		SearchPaths
 		{
@@ -44,12 +48,12 @@
 			// folder.
 			//
 			// Note that this folder is scanned only when the game is booted.
-			game+mod			|gameinfo_path|custom/*
+			game+mod			|gameinfo_path|
 
 			// Now search loose files.  We'll set the directory containing the gameinfo.txt file
 			// as the first "mod" search path (after any user customizations).  This is also the one
 			// that's used when writing to the "mod" path.
-			game+game+game_write+mod+mod_write+default_write_path		|gameinfo_path|.
+			game+game_write+mod+mod_write+default_write_path		|gameinfo_path|.
 			gamebin				|gameinfo_path|bin
 
 			// We search VPK files before ordinary folders, because most files will be found in
@@ -85,13 +89,5 @@
 			// but only while you are connected that server and on that map.
 			game+download	|gameinfo_path|download
 		}
-	}
-	
-	ToolsEnvironment
-	{
-		"Engine"			"Source"
-		"UseVPLATFORM"		"1"
-		"PythonVersion"		"2.7"
-		"PythonHomeDisable"	"1"
 	}
 }
