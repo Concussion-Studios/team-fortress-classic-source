@@ -74,15 +74,15 @@ modelsounds.cache
 *.pdb
 
 # config files
-cfg/sourcemod/*
-cfg/autoexec_user.cfg
-cfg/banned_ip.cfg
-cfg/banned_user.cfg
-cfg/config.cfg
-cfg/server_blacklist.txt
-cfg/server.cfg
-cfg/user.scr
-cfg/settings.scr
+sourcemod/*
+autoexec_user.cfg
+banned_ip.cfg
+banned_user.cfg
+config.cfg
+server_blacklist.txt
+server.cfg
+user.scr
+settings.scr
 settings/admins.txt
 ServerConfig.vdf
 
@@ -97,7 +97,7 @@ console.log
 custom/*
 
 # user stuff
-cfg/pet.txt
+pet.txt
 download/*
 downloadlists/*
 SAVE/*
