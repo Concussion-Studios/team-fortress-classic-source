@@ -26,8 +26,8 @@ END_NETWORK_TABLE()
 BEGIN_PREDICTION_DATA( CTFCSuperNailgun )
 END_PREDICTION_DATA()
 
-LINK_ENTITY_TO_CLASS( weapon_super_nailgun, CTFCSuperNailgun );
-PRECACHE_WEAPON_REGISTER( weapon_super_nailgun );
+LINK_ENTITY_TO_CLASS( tf_weapon_superng, CTFCSuperNailgun );
+PRECACHE_WEAPON_REGISTER( tf_weapon_superng );
 
 #ifndef CLIENT_DLL
 BEGIN_DATADESC( CTFCSuperNailgun )

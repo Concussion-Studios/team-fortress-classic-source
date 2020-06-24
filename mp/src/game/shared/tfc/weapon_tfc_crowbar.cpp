@@ -26,8 +26,8 @@ END_NETWORK_TABLE()
 BEGIN_PREDICTION_DATA( CTFCCrowbar )
 END_PREDICTION_DATA()
 
-LINK_ENTITY_TO_CLASS( weapon_crowbar, CTFCCrowbar );
-PRECACHE_WEAPON_REGISTER( weapon_crowbar );
+LINK_ENTITY_TO_CLASS( tf_weapon_crowbar, CTFCCrowbar );
+PRECACHE_WEAPON_REGISTER( tf_weapon_crowbar );
 
 // ----------------------------------------------------------------------------- //
 // CTFCCrowbar implementation.

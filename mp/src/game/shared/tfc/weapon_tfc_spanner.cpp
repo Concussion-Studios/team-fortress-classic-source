@@ -32,8 +32,8 @@ END_NETWORK_TABLE()
 BEGIN_PREDICTION_DATA( CTFCSpanner )
 END_PREDICTION_DATA()
 
-LINK_ENTITY_TO_CLASS( weapon_spanner, CTFCSpanner );
-PRECACHE_WEAPON_REGISTER( weapon_spanner );
+LINK_ENTITY_TO_CLASS( tf_weapon_spanner, CTFCSpanner );
+PRECACHE_WEAPON_REGISTER( tf_weapon_spanner );
 
 #ifndef CLIENT_DLL
 BEGIN_DATADESC( CTFCSpanner )

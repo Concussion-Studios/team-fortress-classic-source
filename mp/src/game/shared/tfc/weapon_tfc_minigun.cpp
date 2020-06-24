@@ -25,8 +25,8 @@ END_NETWORK_TABLE()
 BEGIN_PREDICTION_DATA( CTFCMinigun )
 END_PREDICTION_DATA()
 
-LINK_ENTITY_TO_CLASS( weapon_minigun, CTFCMinigun );
-PRECACHE_WEAPON_REGISTER( weapon_minigun );
+LINK_ENTITY_TO_CLASS( tf_weapon_ac, CTFCMinigun );
+PRECACHE_WEAPON_REGISTER( tf_weapon_ac );
 
 #ifndef CLIENT_DLL
 

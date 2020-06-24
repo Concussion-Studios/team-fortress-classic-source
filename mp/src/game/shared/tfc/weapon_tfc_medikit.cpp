@@ -24,8 +24,8 @@ END_NETWORK_TABLE()
 BEGIN_PREDICTION_DATA( CTFCMedikit )
 END_PREDICTION_DATA()
 
-LINK_ENTITY_TO_CLASS( weapon_medikit, CTFCMedikit );
-PRECACHE_WEAPON_REGISTER( weapon_medikit );
+LINK_ENTITY_TO_CLASS( tf_weapon_medikit, CTFCMedikit );
+PRECACHE_WEAPON_REGISTER( tf_weapon_medikit );
 
 #ifndef CLIENT_DLL
 BEGIN_DATADESC( CTFCMedikit )

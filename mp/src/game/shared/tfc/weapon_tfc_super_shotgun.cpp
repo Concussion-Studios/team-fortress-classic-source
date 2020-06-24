@@ -25,8 +25,8 @@ END_NETWORK_TABLE()
 BEGIN_PREDICTION_DATA( CTFCSuperShotgun )
 END_PREDICTION_DATA()
 
-LINK_ENTITY_TO_CLASS( weapon_super_shotgun, CTFCSuperShotgun );
-PRECACHE_WEAPON_REGISTER( weapon_super_shotgun );
+LINK_ENTITY_TO_CLASS( tf_weapon_supershotgun, CTFCSuperShotgun );
+PRECACHE_WEAPON_REGISTER( tf_weapon_supershotgun );
 
 #ifndef CLIENT_DLL
 	BEGIN_DATADESC( CTFCSuperShotgun )

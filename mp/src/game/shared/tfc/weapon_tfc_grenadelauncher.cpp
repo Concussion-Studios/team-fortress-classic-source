@@ -26,8 +26,8 @@ END_NETWORK_TABLE()
 BEGIN_PREDICTION_DATA( CTFCGrenadeLauncher )
 END_PREDICTION_DATA()
 
-LINK_ENTITY_TO_CLASS( weapon_grenadelauncher, CTFCGrenadeLauncher );
-PRECACHE_WEAPON_REGISTER( weapon_grenadelauncher );
+LINK_ENTITY_TO_CLASS( tf_weapon_gl, CTFCGrenadeLauncher );
+PRECACHE_WEAPON_REGISTER( tf_weapon_gl );
 
 #ifndef CLIENT_DLL
 BEGIN_DATADESC( CTFCGrenadeLauncher )

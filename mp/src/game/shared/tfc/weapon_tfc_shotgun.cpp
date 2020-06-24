@@ -28,8 +28,8 @@ END_NETWORK_TABLE()
 BEGIN_PREDICTION_DATA( CTFCShotgun )
 END_PREDICTION_DATA()
 
-LINK_ENTITY_TO_CLASS( weapon_shotgun, CTFCShotgun );
-PRECACHE_WEAPON_REGISTER( weapon_shotgun );
+LINK_ENTITY_TO_CLASS( tf_weapon_shotgun, CTFCShotgun );
+PRECACHE_WEAPON_REGISTER( tf_weapon_shotgun );
 
 #ifndef CLIENT_DLL
 BEGIN_DATADESC( CTFCShotgun )
