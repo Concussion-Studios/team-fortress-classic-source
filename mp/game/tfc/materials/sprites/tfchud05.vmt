@@ -1,8 +1,4 @@
-"UnlitGeneric"
+"LightmappedGeneric"
 {
 	"$basetexture" "sprites/tfchud05"
-	"$additive" "1"
-	"$vertexcolor" "1"
-	"$vertexalpha" "1"
-	"$ignorez"     "1"
 }
