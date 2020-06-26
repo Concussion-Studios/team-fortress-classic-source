@@ -1,0 +1,32 @@
+//
+// Scout Player Class
+//
+PlayerClass
+{
+	// Attributes.
+	"name"			"scout"
+	"model"			"models/player/scout.mdl"
+	"model_hd"		"models/player/hd/scout.mdl"
+	"model_hands"	"models/weapons/c_models/c_scout_arms.mdl"
+	"localize_name"	"TF_Class_Name_Scout"
+	"speed_max"		"400"
+	"health_max"	"75"
+	"armor_max"		"50"
+
+	// Grenades.
+	"grenade1"		"TF_GRENADE_CALTROP"
+	"grenade2"		"TF_GRENADE_CONCUSSION"
+
+	// Weapons.
+	"weapon1"		"TF_WEAPON_SHOTGUN"
+	"weapon2"		"TF_WEAPON_NAILGUN"
+	"weapon3"		"TF_WEAPON_CROWBAR"
+
+	AmmoMax
+	{
+		"AMMO_SHELLS"	"32"
+		"AMMO_NAILS"	"36"
+		"AMMO_GRENADE1"	"1"
+		"AMMO_GRENADE2"	"1"	
+	}
+}

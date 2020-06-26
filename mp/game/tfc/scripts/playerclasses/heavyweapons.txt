@@ -1,0 +1,32 @@
+//
+// HeavyWeapons Player Class
+//
+PlayerClass
+{
+	// Attributes.
+	"name"			"heavyweapons"
+	"model"			"models/player/hwguy.mdl"
+	"model_hd"		"models/player/hd/hwguy.mdl"
+	"model_hands"	"models/weapons/c_models/c_heavy_arms.mdl"
+	"localize_name"	"TF_Class_Name_HWGuy"
+	"speed_max"		"230"
+	"health_max"	"100"
+	"armor_max"		"300"
+
+	// Grenades.
+	"grenade1"		"TF_GRENADE_NORMAL"
+	"grenade2"		"TF_GRENADE_MIRV"
+
+	// Weapons.
+	"weapon1"		"TF_WEAPON_IC"
+	"weapon2"		"TF_WEAPON_SHOTGUN"
+	"weapon2"		"TF_WEAPON_SUPER_SHOTGUN"
+	"weapon3"		"TF_WEAPON_CROWBAR"
+
+	AmmoMax
+	{
+		"AMMO_SHELLS"	"400"
+		"AMMO_GRENADE1"	"1"
+		"AMMO_GRENADE1"	"1"
+	}
+}

@@ -1,0 +1,34 @@
+//
+// Medic Player Class
+//
+PlayerClass
+{
+	// Attributes.
+	"name"			"medic"
+	"model"			"models/player/medic.mdl"
+	"model_hd"		"models/player/hd/medic.mdl"
+	"model_hands"	"models/weapons/c_models/c_medic_arms.mdl"
+	"localize_name"	"TF_Class_Name_Medic"
+	"speed_max"		"320"
+	"health_max"	"90"
+	"armor_max"		"100"
+
+	// Grenades.
+	"grenade1"		"TF_GRENADE_NORMAL"
+	"grenade2"		"TF_GRENADE_CONCUSSION"
+
+	// Weapons.
+	"weapon1"		"TF_WEAPON_MEDIKIT"
+	"weapon2"		"TF_WEAPON_SUPER_NAILGUN"
+	"weapon3"		"TF_WEAPON_SHOTGUN"
+	"weapon3"		"TF_WEAPON_SUPER_SHOTGUN"
+
+	AmmoMax
+	{
+		"AMMO_CELLS"	"150"
+		"AMMO_SHELLS"	"150"
+		"AMMO_NAILS"	"200"
+		"AMMO_GRENADE1"	"1"
+		"AMMO_GRENADE2"	"1"
+	}	
+}

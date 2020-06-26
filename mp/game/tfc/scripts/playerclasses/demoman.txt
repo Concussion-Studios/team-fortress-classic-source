@@ -1,0 +1,33 @@
+//
+// Demoman Player Class
+//
+PlayerClass
+{
+	// Attributes.
+	"name"				"demoman"
+	"model"				"models/player/demo.mdl"
+	"model_hd"			"models/player/hd/demo.mdl"
+	"model_hands"		"models/weapons/c_models/c_demo_arms.mdl"
+	"localize_name"		"TF_Class_Name_Demoman"
+	"speed_max"			"280"
+	"health_max"		"90"
+	"armor_max"			"120"
+
+	// Grenades.
+	"grenade1"			"TF_GRENADE_NORMAL"
+	"grenade2"			"TF_GRENADE_MIRV_DEMOMAN"
+
+	// Weapons.
+	"weapon1"			"TF_WEAPON_GRENADELAUNCHER"
+	"weapon2"			"TF_WEAPON_PIPEBOMB"
+	"weapon3"			"TF_WEAPON_SHOTGUN"
+	"weapon4"			"TF_WEAPON_CROWBAR"
+
+	AmmoMax
+	{
+		"AMMO_ROCKETS"		"16"
+		"AMMO_SHELLS"		"24"
+		"AMMO_GRENADE1"		"1"
+		"AMMO_GRENADE2"		"1"
+	}	
+}

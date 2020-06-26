@@ -1,0 +1,34 @@
+//
+// Pyro Player Class
+//
+PlayerClass
+{
+	// Attributes.
+	"name"			"pyro"
+	"model"			"models/player/pyro.mdl"
+	"model_hd"		"models/player/hd/pyro.mdl"
+	"model_hands"	"models/weapons/c_models/c_pyro_arms.mdl"
+	"localize_name"	"TF_Class_Name_Pyro"
+	"speed_max"		"300"
+	"health_max"	"100"
+	"armor_max"		"150"
+
+	// Grenades.
+	"grenade1"		"TF_GRENADE_NORMAL"
+	"grenade2"		"TF_GRENADE_NAPALM"
+
+	// Weapons.
+	"weapon1"		"TF_WEAPON_FLAMETHROWER"
+	"weapon2"		"TF_WEAPON_IC"
+	"weapon3"		"TF_WEAPON_SHOTGUN"
+	"weapon4"		"TF_WEAPON_CROWBAR"
+
+	AmmoMax
+	{
+		"AMMO_CELLS"	"200"
+		"AMMO_SHELLS"	"32"
+		"AMMO_ROCKETS"	"200"
+		"AMMO_GRENADE1"	"1"
+		"AMMO_GRENADE2"	"1"
+	}	
+}
