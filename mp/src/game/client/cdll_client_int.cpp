@@ -859,9 +859,14 @@ ISourceVirtualReality *g_pSourceVR = NULL;
 //-----------------------------------------------------------------------------
 int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physicsFactory, CGlobalVarsBase *pGlobals )
 {
+#ifdef TFC_DLL
+    // Force lightmaps to ignore Hunk_Alloc due to crash issues (Engine Hunk Overflow!)
+    // Because sorse is stoooooopid...
+    CommandLine()->AppendParm( "+r_hunkalloclightmaps", "0" );
+#endif // TFC_DLL
+
 	InitCRTMemDebug();
 	MathLib_Init( 2.2f, 2.2f, 0.0f, 2.0f );
-
 
 #ifdef SIXENSE
 	g_pSixenseInput = new SixenseInput;
