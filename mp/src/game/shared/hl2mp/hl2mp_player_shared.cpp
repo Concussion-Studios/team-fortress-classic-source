@@ -6,53 +6,23 @@
 //
 //=============================================================================//
 #include "cbase.h"
+#include "hl2mp_gamerules.h"
+#include "takedamageinfo.h"
 
 #ifdef CLIENT_DLL
-#include "c_hl2mp_player.h"
-#include "prediction.h"
-#define CRecipientFilter C_RecipientFilter
+	#include "c_hl2mp_player.h"
+	#include "prediction.h"
 #else
-#include "hl2mp_player.h"
+	#include "hl2mp_player.h"
+	#include "ai_basenpc.h"
+
+	void TE_PlayerAnimEvent( CBasePlayer* pPlayer, PlayerAnimEvent_t playerAnim, int nData );
 #endif
 
-#include "hl2mp_gamerules.h"
-
-#include "engine/IEngineSound.h"
-#include "SoundEmitterSystem/isoundemittersystembase.h"
+void SpawnBlood ( Vector vecSpot, const Vector &vecDir, int bloodColor, float flDamage );
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
-
-extern ConVar sv_footsteps;
-
-const char *g_ppszPlayerSoundPrefixNames[PLAYER_SOUNDS_MAX] =
-{
-	"NPC_Citizen",
-	"NPC_CombineS",
-	"NPC_MetroPolice",
-};
-
-const char *CHL2MP_Player::GetPlayerModelSoundPrefix( void )
-{
-	return g_ppszPlayerSoundPrefixNames[m_iPlayerSoundType];
-}
-
-void CHL2MP_Player::PrecacheFootStepSounds( void )
-{
-	int iFootstepSounds = ARRAYSIZE( g_ppszPlayerSoundPrefixNames );
-	int i;
-
-	for ( i = 0; i < iFootstepSounds; ++i )
-	{
-		char szFootStepName[128];
-
-		Q_snprintf( szFootStepName, sizeof( szFootStepName ), "%s.RunFootstepLeft", g_ppszPlayerSoundPrefixNames[i] );
-		PrecacheScriptSound( szFootStepName );
-
-		Q_snprintf( szFootStepName, sizeof( szFootStepName ), "%s.RunFootstepRight", g_ppszPlayerSoundPrefixNames[i] );
-		PrecacheScriptSound( szFootStepName );
-	}
-}
 
 //-----------------------------------------------------------------------------
 // Consider the weapon's built-in accuracy, this character's proficiency with
@@ -68,62 +38,156 @@ Vector CHL2MP_Player::GetAttackSpread( CBaseCombatWeapon *pWeapon, CBaseEntity *
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : step - 
-//			fvol - 
-//			force - force sound to play
+// Purpose: multiplayer does not do autoaiming.
 //-----------------------------------------------------------------------------
-void CHL2MP_Player::PlayStepSound( Vector &vecOrigin, surfacedata_t *psurface, float fvol, bool force )
+Vector CHL2MP_Player::GetAutoaimVector( float flScale )
 {
-	if ( gpGlobals->maxClients > 1 && !sv_footsteps.GetFloat() )
-		return;
+	//No Autoaim
+	Vector	forward;
+	AngleVectors( EyeAngles() + m_Local.m_vecPunchAngle, &forward );
+	return	forward;
+}
 
-#if defined( CLIENT_DLL )
-	// during prediction play footstep sounds only once
-	if ( !prediction->IsFirstTimePredicted() )
-		return;
-#endif
-
-	if ( GetFlags() & FL_DUCKING )
-		return;
-
-	m_Local.m_nStepside = !m_Local.m_nStepside;
-
-	char szStepSound[128];
-
-	if ( m_Local.m_nStepside )
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CHL2MP_Player::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
+{
+	if ( m_takedamage )
 	{
-		Q_snprintf( szStepSound, sizeof( szStepSound ), "%s.RunFootstepLeft", g_ppszPlayerSoundPrefixNames[m_iPlayerSoundType] );
+		CTakeDamageInfo info = inputInfo;
+
+		if ( info.GetAttacker() )
+		{
+#ifdef GAME_DLL
+			// --------------------------------------------------
+			//  If an NPC check if friendly fire is disallowed
+			// --------------------------------------------------
+			CAI_BaseNPC *pNPC = info.GetAttacker()->MyNPCPointer();
+			if ( pNPC && (pNPC->CapabilitiesGet() & bits_CAP_NO_HIT_PLAYER) && pNPC->IRelationType( this ) != D_HT )
+				return;
+
+			// --------------------------------------------------
+			//  Prevent damage here so blood doesn't appear
+			// --------------------------------------------------
+			if ( info.GetAttacker()->IsPlayer() )
+			{
+				if ( !g_pGameRules->FPlayerCanTakeDamage( this, info.GetAttacker(), info ) )
+					return;
+			}
+#endif // GAME_DLL
+
+			// --------------------------------------------------
+			// Don't allow blood to appear on teamplay
+			// --------------------------------------------------
+			if ( HL2MPRules()->IsTeamplay() && info.GetAttacker()->InSameTeam( this ) == true )
+				return;
+		}
+
+#ifdef GAME_DLL
+		SetLastHitGroup( ptr->hitgroup );
+#endif  // GAME_DLL
+
+		ConVarRef sk_player_head( "sk_player_head" );
+		ConVarRef sk_player_chest( "sk_player_chest" );
+		ConVarRef sk_player_stomach( "sk_player_stomach" );
+		ConVarRef sk_player_arm( "sk_player_arm" );
+		ConVarRef sk_player_leg( "sk_player_leg" );
+
+		switch ( ptr->hitgroup )
+		{
+		case HITGROUP_GENERIC:
+			break;
+		case HITGROUP_HEAD:
+			info.ScaleDamage( sk_player_head.GetFloat() );
+			break;
+		case HITGROUP_CHEST:
+			info.ScaleDamage( sk_player_chest.GetFloat() );
+			break;
+		case HITGROUP_STOMACH:
+			info.ScaleDamage( sk_player_stomach.GetFloat() );
+			break;
+		case HITGROUP_LEFTARM:
+		case HITGROUP_RIGHTARM:
+			info.ScaleDamage( sk_player_arm.GetFloat() );
+			break;
+		case HITGROUP_LEFTLEG:
+		case HITGROUP_RIGHTLEG:
+			info.ScaleDamage( sk_player_leg.GetFloat() );
+			break;
+		default:
+			break;
+		}
+
+		// If this damage type makes us bleed, then do so
+		bool bShouldBleed = !g_pGameRules->Damage_ShouldNotBleed( info.GetDamageType() ) || BloodColor() != DONT_BLEED;
+		if ( bShouldBleed )
+		{
+			SpawnBlood( ptr->endpos, vecDir, BloodColor(), info.GetDamage() );// a little surface blood.
+			TraceBleed( info.GetDamage(), vecDir, ptr, info.GetDamageType() );
+		}
+
+		AddMultiDamage( info, this );
 	}
-	else
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CHL2MP_Player::DoAnimationEvent( PlayerAnimEvent_t event, int nData )
+{
+#ifdef CLIENT_DLL
+	if ( IsLocalPlayer() )
 	{
-		Q_snprintf( szStepSound, sizeof( szStepSound ), "%s.RunFootstepRight", g_ppszPlayerSoundPrefixNames[m_iPlayerSoundType] );
+		if ( ( prediction->InPrediction() && !prediction->IsFirstTimePredicted() ) )
+			return;
 	}
 
-	CSoundParameters params;
-	if ( GetParametersForSound( szStepSound, params, NULL ) == false )
-		return;
+	MDLCACHE_CRITICAL_SECTION();
+#endif // CLIENT_DLL
 
-	CRecipientFilter filter;
-	filter.AddRecipientsByPAS( vecOrigin );
+	m_PlayerAnimState->DoAnimationEvent( event, nData );
 
 #ifndef CLIENT_DLL
-	// im MP, server removed all players in origins PVS, these players 
-	// generate the footsteps clientside
-	if ( gpGlobals->maxClients > 1 )
-		filter.RemoveRecipientsByPVS( vecOrigin );
-#endif
+    TE_PlayerAnimEvent( this, event, nData );
+#endif // CLIENT_DLL
+}
 
-	EmitSound_t ep;
-	ep.m_nChannel = CHAN_BODY;
-	ep.m_pSoundName = params.soundname;
-	ep.m_flVolume = fvol;
-	ep.m_SoundLevel = params.soundlevel;
-	ep.m_nFlags = 0;
-	ep.m_nPitch = params.pitch;
-	ep.m_pOrigin = &vecOrigin;
+//-----------------------------------------------------------------------------
+// Purpose: Do nothing multiplayer_animstate takes care of animation.
+// Input  : playerAnim - 
+//-----------------------------------------------------------------------------
+void CHL2MP_Player::SetAnimation( PLAYER_ANIM playerAnim )
+{
+	if ( playerAnim == PLAYER_WALK || playerAnim == PLAYER_IDLE ) 
+		return;
 
-	EmitSound( filter, entindex(), ep );
+    if ( playerAnim == PLAYER_RELOAD )
+        DoAnimationEvent( PLAYERANIMEVENT_RELOAD );
+    else if ( playerAnim == PLAYER_JUMP )
+        DoAnimationEvent( PLAYERANIMEVENT_JUMP );
+    else
+        Assert( !"CHL2MP_Player::SetAnimation OBSOLETE!" );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+CStudioHdr *CHL2MP_Player::OnNewModel( void )
+{
+	CStudioHdr *hdr = BaseClass::OnNewModel();
+	if ( hdr )
+	{
+#ifdef CLIENT_DLL
+		InitializePoseParams();
+#endif // CLIENT_DLL
+
+		// Reset the players animation states, gestures
+		if ( m_PlayerAnimState )
+			m_PlayerAnimState->OnNewModel();
+	}
+
+	return hdr;
 }
 
 //-----------------------------------------------------------------------------

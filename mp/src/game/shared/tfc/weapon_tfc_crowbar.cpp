@@ -7,9 +7,9 @@
 #include "weapon_tfc_crowbar.h"
 
 #if defined( CLIENT_DLL )
-	#include "c_tfc_player.h"
+	#include "c_hl2mp_player.h"
 #else
-	#include "tfc_player.h"
+	#include "hl2mp_player.h"
 #endif
 
 static ConVar tfc_crowbar_damage_first( "tfc_crowbar_damage_first", "25", 0, "First crowbar hit damage." );

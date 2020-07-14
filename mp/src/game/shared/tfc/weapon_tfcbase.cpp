@@ -31,9 +31,9 @@
 #include "tfc_gamerules.h"
 
 #if defined( CLIENT_DLL )
-	#include "c_tfc_player.h"
+	#include "c_hl2mp_player.h"
 #else
-	#include "tfc_player.h"
+	#include "hl2mp_player.h"
 	#include "te_effect_dispatch.h"
 #endif
 
@@ -62,9 +62,9 @@ CWeaponTFCBase::CWeaponTFCBase()
 	AddSolidFlags( FSOLID_TRIGGER ); // Nothing collides with these but it gets touches.
 }
 
-CTFCPlayer* CWeaponTFCBase::GetPlayerOwner() const
+CHL2MP_Player* CWeaponTFCBase::GetPlayerOwner() const
 {
-	return dynamic_cast< CTFCPlayer* >( GetOwner() );
+	return dynamic_cast< CHL2MP_Player* >( GetOwner() );
 }
 
 /*const CTFCWeaponInfo &CWeaponTFCBase::GetTFCWpnData() const
@@ -97,37 +97,6 @@ void CWeaponTFCBase::Spawn()
 	// will be in the ground so its EmitSound calls won't do anything.
 	SetLocalOrigin( Vector( 0, 0, 5 ) );
 }
-	
-bool CWeaponTFCBase::DefaultReload( int iClipSize1, int iClipSize2, int iActivity )
-{
-	if ( BaseClass::DefaultReload( iClipSize1, iClipSize2, iActivity ) )
-	{
-		SendReloadSoundEvent();
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-void CWeaponTFCBase::SendReloadSoundEvent()
-{
-	CTFCPlayer *pPlayer = dynamic_cast< CTFCPlayer* >( GetOwner() );
-	if ( !pPlayer )
-		return;
-
-	// Send a message to any clients that have this entity to play the reload.
-	CPASFilter filter( pPlayer->GetAbsOrigin() );
-	filter.RemoveRecipient( pPlayer );
-
-	UserMessageBegin( filter, "ReloadEffect" );
-		WRITE_SHORT( pPlayer->entindex() );
-	MessageEnd();
-
-	// Make the player play his reload animation.
-	pPlayer->DoAnimationEvent( PLAYERANIMEVENT_RELOAD );
-}
 
 Vector CWeaponTFCBase::GetSoundEmissionOrigin() const
 {
@@ -143,7 +112,7 @@ bool CWeaponTFCBase::PhysicsSplash( const Vector &centerPoint, const Vector &nor
 	if ( rawSpeed > 20 )
 	{
 		float size = 4.0f;
-		if ( GetWeaponID() != WEAPON_TRANQ )
+		if ( GetWeaponID() != TF_WEAPON_TRANQ )
 			size += 2.0f;
 
 		// adjust splash size based on speed

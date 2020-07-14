@@ -9,9 +9,9 @@
 #include "in_buttons.h"
 
 #if defined( CLIENT_DLL )
-	#include "c_tfc_player.h"
+	#include "c_hl2mp_player.h"
 #else
-	#include "tfc_player.h"
+	#include "hl2mp_player.h"
 #endif
 
 // ----------------------------------------------------------------------------- //
@@ -62,7 +62,7 @@ bool CTFCMinigun::Deploy()
 
 void CTFCMinigun::WindUp( )
 {
-	CTFCPlayer *pOwner = GetPlayerOwner();
+	CHL2MP_Player *pOwner = GetPlayerOwner();
 	if ( !pOwner )
 		return;
 
@@ -84,7 +84,7 @@ void CTFCMinigun::WindUp( )
 
 void CTFCMinigun::WindDown( bool bFromHolster )
 {
-	CTFCPlayer *pOwner = GetPlayerOwner();
+	CHL2MP_Player *pOwner = GetPlayerOwner();
 	if ( !pOwner )
 		return;
 
@@ -104,13 +104,13 @@ void CTFCMinigun::WindDown( bool bFromHolster )
 
 void CTFCMinigun::Spin()
 {
-	CTFCPlayer *pOwner = GetPlayerOwner();
+	CHL2MP_Player *pOwner = GetPlayerOwner();
 	if ( !pOwner )
 		return;
 
 	WeaponSound( SPECIAL3 );	// "special3" = spin
 
-	pOwner->DoAnimationEvent( PLAYERANIMEVENT_FIRE_GUN );
+	pOwner->DoAnimationEvent( PLAYERANIMEVENT_ATTACK_PRIMARY );
 }
 
 void CTFCMinigun::Fire()
@@ -118,18 +118,18 @@ void CTFCMinigun::Fire()
 	if ( m_flNextPrimaryAttack > gpGlobals->curtime )
 		return;
 
-	CTFCPlayer *pOwner = GetPlayerOwner();
+	CHL2MP_Player *pOwner = GetPlayerOwner();
 	if ( !pOwner )
 		return;
 
-	pOwner->DoAnimationEvent( PLAYERANIMEVENT_FIRE_GUN );
+	pOwner->DoAnimationEvent( PLAYERANIMEVENT_ATTACK_PRIMARY );
 
 	BaseClass::PrimaryAttack();	// Use the base HL2 system to fire.
 }
 
 void CTFCMinigun::StartSpin()
 {
-	CTFCPlayer *pOwner = GetPlayerOwner();
+	CHL2MP_Player *pOwner = GetPlayerOwner();
 	if ( !pOwner )
 		return;
 
@@ -138,12 +138,12 @@ void CTFCMinigun::StartSpin()
 	// Rotate barrel without firing for fun
 	m_iWeaponState = AC_STATE_SPINNING;
 
-	pOwner->DoAnimationEvent( PLAYERANIMEVENT_FIRE_GUN );
+	pOwner->DoAnimationEvent( PLAYERANIMEVENT_ATTACK_PRIMARY );
 }
 
 void CTFCMinigun::PrimaryAttack()
 {
-	CTFCPlayer *pOwner = GetPlayerOwner();
+	CHL2MP_Player *pOwner = GetPlayerOwner();
 	if ( !pOwner )
 		return;
 

@@ -9,9 +9,9 @@
 #include "in_buttons.h"
 
 #if defined( CLIENT_DLL )
-	#include "c_tfc_player.h"
+	#include "c_hl2mp_player.h"
 #else
-	#include "tfc_player.h"
+	#include "hl2mp_player.h"
 #endif
 
 // ----------------------------------------------------------------------------- //
@@ -43,7 +43,7 @@ CTFCSuperShotgun::CTFCSuperShotgun()
 
 void CTFCSuperShotgun::PrimaryAttack()
 {
-	CTFCPlayer *pOwner = GetPlayerOwner();
+	CHL2MP_Player *pOwner = GetPlayerOwner();
 	if ( !pOwner )
 		return;
 
@@ -58,7 +58,7 @@ void CTFCSuperShotgun::PrimaryAttack()
 
 	WeaponSound( SINGLE );
 	SendWeaponAnim( ACT_VM_PRIMARYATTACK );
-	pOwner->DoAnimationEvent( PLAYERANIMEVENT_FIRE_GUN );
+	pOwner->DoAnimationEvent( PLAYERANIMEVENT_ATTACK_PRIMARY );
 
 	Vector vecSrc = pOwner->Weapon_ShootPosition();
 	Vector vecAiming = ToBasePlayer( pOwner )->GetAutoaimVector( AUTOAIM_5DEGREES );

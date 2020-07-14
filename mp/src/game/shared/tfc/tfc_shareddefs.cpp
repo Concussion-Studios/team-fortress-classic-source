@@ -93,38 +93,38 @@ const char* g_aProjectileNames[] =
 //-----------------------------------------------------------------------------
 const char* g_aWeaponNames[] =
 {
-	"WEAPON_NONE",
+	"TF_WEAPON_NONE",
 
 	// Slot 1 Weapons
-	"WEAPON_CROWBAR",
-	"WEAPON_MEDIKIT",
-	"WEAPON_KNIFE",
-	"WEAPON_SPANNER",
-	"WEAPON_UMBRELLA",
+	"TF_WEAPON_CROWBAR",
+	"TF_WEAPON_MEDIKIT",
+	"TF_WEAPON_KNIFE",
+	"TF_WEAPON_SPANNER",
+	"TF_WEAPON_UMBRELLA",
 
 	// Slot 2 Weapons
-	"WEAPON_SHOTGUN",
-	"WEAPON_RIFLE",
-	"WEAPON_TRANQ",
-	"WEAPON_RAILGUN",
+	"TF_WEAPON_SHOTGUN",
+	"TF_WEAPON_RIFLE",
+	"TF_WEAPON_TRANQ",
+	"TF_WEAPON_RAILGUN",
 
 	// Slot 3 Weapons
-	"WEAPON_AUTORIFLE",
-	"WEAPON_SUPER_SHOTGUN",
+	"TF_WEAPON_AUTORIFLE",
+	"TF_WEAPON_SUPER_SHOTGUN",
 
 	// Slot 4 Weapons
 	"WEAPON_NAILGUN",
-	"WEAPON_GRENADELAUNCHER",
-	"WEAPON_SUPER_NAILGUN",
-	"WEAPON_FLAMETROWER",
+	"TF_WEAPON_GRENADELAUNCHER",
+	"TF_WEAPON_SUPER_NAILGUN",
+	"TF_WEAPON_FLAMETHROWER",
 
 	// Slot 5 Weapons
-	"WEAPON_RPG",
-	"WEAPON_PIPEBOMB",
-	"WEAPON_MINIGUN",
-	"WEAPON_IC",
+	"TF_WEAPON_RPG",
+	"TF_WEAPON_PIPEBOMB",
+	"TF_WEAPON_MINIGUN",
+	"TF_WEAPON_IC",
 
-	"WEAPON_LAST"
+	"TF_WEAPON_COUNT"
 };
 
 //--------------------------------------------------------------------------------------------------------
@@ -134,13 +134,13 @@ int AliasToWeaponID( const char *alias )
 {
 	if ( alias )
 	{
-		for ( int i = 0; i < WEAPON_LAST; ++i )
+		for ( int i = 0; i < TF_WEAPON_COUNT; ++i )
 		{
 			if ( !Q_stricmp( g_aWeaponNames[i], alias ) )
 				return i;
 		}
 	}
-	return WEAPON_NONE;
+	return TF_WEAPON_NONE;
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -148,7 +148,7 @@ int AliasToWeaponID( const char *alias )
 //--------------------------------------------------------------------------------------------------------
 const char *WeaponIDToAlias( int iWeaponID )
 {
-	if ( iWeaponID <= 0 || iWeaponID > WEAPON_LAST )
+	if ( iWeaponID <= 0 || iWeaponID > TF_WEAPON_COUNT )
 		return NULL;
 
 	return g_aWeaponNames[iWeaponID];
@@ -161,11 +161,11 @@ bool IsPrimaryWeapon( int id )
 {
 	switch( id )
 	{
-		case WEAPON_CROWBAR:
-		case WEAPON_MEDIKIT:
-		case WEAPON_KNIFE:
-		case WEAPON_SPANNER:
-		case WEAPON_UMBRELLA:
+		case TF_WEAPON_CROWBAR:
+		case TF_WEAPON_MEDIKIT:
+		case TF_WEAPON_KNIFE:
+		case TF_WEAPON_SPANNER:
+		case TF_WEAPON_UMBRELLA:
 			return true;
 	}
 
@@ -179,10 +179,10 @@ bool IsSecondaryWeapon( int id )
 {
 	switch( id )
 	{
-		case WEAPON_SHOTGUN:
-		case WEAPON_RIFLE:
-		case WEAPON_TRANQ:
-		case WEAPON_RAILGUN:
+		case TF_WEAPON_SHOTGUN:
+		case TF_WEAPON_RIFLE:
+		case TF_WEAPON_TRANQ:
+		case TF_WEAPON_RAILGUN:
 			return true;
 	}
 
@@ -196,8 +196,8 @@ bool IsTertiaryWeapon( int id )
 {
 	switch( id )
 	{
-		case WEAPON_AUTORIFLE:
-		case WEAPON_SUPER_SHOTGUN:
+		case TF_WEAPON_AUTORIFLE:
+		case TF_WEAPON_SUPER_SHOTGUN:
 			return true;
 	}
 
@@ -211,10 +211,10 @@ bool IsQuaternaryWeapon( int id )
 {
 	switch( id )
 	{
-		case WEAPON_NAILGUN:
-		case WEAPON_GRENADELAUNCHER:
-		case WEAPON_SUPER_NAILGUN:
-		case WEAPON_FLAMETROWER:
+		case TF_WEAPON_NAILGUN:
+		case TF_WEAPON_GRENADELAUNCHER:
+		case TF_WEAPON_SUPER_NAILGUN:
+		case TF_WEAPON_FLAMETHROWER:
 			return true;
 	}
 
@@ -228,10 +228,10 @@ bool IsQuinaryWeapon( int id )
 {
 	switch( id )
 	{
-		case WEAPON_RPG:
-		case WEAPON_PIPEBOMB:
-		case WEAPON_MINIGUN:
-		case WEAPON_IC:
+		case TF_WEAPON_RPG:
+		case TF_WEAPON_PIPEBOMB:
+		case TF_WEAPON_MINIGUN:
+		case TF_WEAPON_IC:
 			return true;
 	}
 

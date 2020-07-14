@@ -7,9 +7,9 @@
 #include "weapon_tfc_spanner.h"
 
 #if defined( CLIENT_DLL )
-	#include "c_tfc_player.h"
+	#include "c_hl2mp_player.h"
 #else
-	#include "tfc_player.h"
+	#include "hl2mp_player.h"
 #endif
 
 #define	KNIFE_BODYHIT_VOLUME 128
@@ -63,7 +63,7 @@ CTFCSpanner::CTFCSpanner()
 
 	void CTFCSpanner::AxeHit( CBaseEntity *pTarget, bool bFirstSwing, trace_t &tr, float *flDamage, bool *bDoEffects )
 	{
-		CTFCPlayer *pPlayer = GetPlayerOwner();
+		CHL2MP_Player *pPlayer = GetPlayerOwner();
 		if ( !pPlayer )
 			return;
 

@@ -48,7 +48,7 @@ public:
 	virtual bool SendWeaponAnim( int iActivity );
 	virtual void HandleFireOnEmpty();
 	
-	virtual TFCWeaponID GetWeaponID( void ) const { return WEAPON_MINIGUN; }
+	virtual TFCWeaponID GetWeaponID( void ) const { return TF_WEAPON_MINIGUN; }
 
 private:
 	

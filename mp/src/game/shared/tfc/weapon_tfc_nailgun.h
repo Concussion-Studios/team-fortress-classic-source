@@ -30,7 +30,7 @@ public:
 	
 	CTFCNailgun();
 
-	virtual TFCWeaponID GetWeaponID( void ) const { return WEAPON_NAILGUN; }
+	virtual TFCWeaponID GetWeaponID( void ) const { return TF_WEAPON_NAILGUN; }
 	virtual void PrimaryAttack();
 	virtual void SecondaryAttack() { return; }
 

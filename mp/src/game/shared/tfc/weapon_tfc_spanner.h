@@ -32,7 +32,7 @@ public:
 	
 	CTFCSpanner();
 
-	virtual TFCWeaponID GetWeaponID( void ) const { return WEAPON_SPANNER; }
+	virtual TFCWeaponID GetWeaponID( void ) const { return TF_WEAPON_SPANNER; }
 
 // CTFCCrowbar overrides.
 public:

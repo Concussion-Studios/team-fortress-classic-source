@@ -27,7 +27,7 @@ public:
 	
 	CTFCUmbrella();
 
-	virtual TFCWeaponID GetWeaponID( void ) const { return WEAPON_UMBRELLA; }
+	virtual TFCWeaponID GetWeaponID( void ) const { return TF_WEAPON_UMBRELLA; }
 
 private:
 	CTFCUmbrella( const CTFCUmbrella & ) {}

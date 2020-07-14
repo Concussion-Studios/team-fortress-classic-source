@@ -27,6 +27,8 @@
 #include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "obstacle_pushaway.h"
 #include "ilagcompensationmanager.h"
+#include "filesystem.h"
+#include "cdll_int.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -44,11 +46,7 @@ extern int	gEvilImpulse101;
 #define HL2MP_PUSHAWAY_THINK_CONTEXT	"HL2MPPushawayThink"
 #define CYCLELATCH_UPDATE_INTERVAL	0.2f
 
-#ifndef TFC_DLL
-void DropPrimedFragGrenade( CHL2MP_Player *pPlayer, CBaseCombatWeapon *pGrenade );
-
 LINK_ENTITY_TO_CLASS( player, CHL2MP_Player );
-#endif
 
 LINK_ENTITY_TO_CLASS( info_player_combine, CPointEntity );
 LINK_ENTITY_TO_CLASS( info_player_rebel, CPointEntity );
@@ -63,7 +61,6 @@ void* SendProxy_SendNonLocalDataTable( const SendProp *pProp, const void *pStruc
 	return ( void * )pVarData;
 }
 REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendNonLocalDataTable );
-
 
 BEGIN_SEND_TABLE_NOBASE( CHL2MP_Player, DT_HL2MPLocalPlayerExclusive )
 	// send a hi-res origin to the local player for use in prediction
@@ -106,7 +103,6 @@ IMPLEMENT_SERVERCLASS_ST(CHL2MP_Player, DT_HL2MP_Player)
 
 	SendPropEHandle( SENDINFO( m_hRagdoll ) ),
 	SendPropInt( SENDINFO( m_iSpawnInterpCounter), 4 ),
-	SendPropInt( SENDINFO( m_iPlayerSoundType), 3 ),
 		
 END_SEND_TABLE()
 
@@ -140,8 +136,6 @@ const char *g_ppszRandomCombineModels[] =
 	"models/player/police.mdl",
 };
 
-
-#define MAX_COMBINE_MODELS 4
 #define MODEL_CHANGE_INTERVAL 5.0f
 #define TEAM_CHANGE_INTERVAL 5.0f
 
@@ -165,7 +159,6 @@ CHL2MP_Player::CHL2MP_Player()
 	m_iSpawnInterpCounter = 0;
 
 	m_bEnterObserver = false;
-	m_bReady = false;
 
 	m_cycleLatch = 0;
 	m_cycleLatchTimer.Invalidate();
@@ -209,87 +202,32 @@ void CHL2MP_Player::Precache( void )
 
 	for ( i = 0; i < nHeads; ++i )
 		 PrecacheModel( g_ppszRandomCombineModels[i] );
-
-	PrecacheFootStepSounds();
-
-	PrecacheScriptSound( "NPC_MetroPolice.Die" );
-	PrecacheScriptSound( "NPC_CombineS.Die" );
-	PrecacheScriptSound( "NPC_Citizen.die" );
 }
 
 void CHL2MP_Player::GiveAllItems( void )
 {
 	EquipSuit();
 
-	CBasePlayer::GiveAmmo( 255,	"Pistol");
-	CBasePlayer::GiveAmmo( 255,	"AR2" );
-	CBasePlayer::GiveAmmo( 5,	"AR2AltFire" );
-	CBasePlayer::GiveAmmo( 255,	"SMG1");
-	CBasePlayer::GiveAmmo( 1,	"smg1_grenade");
-	CBasePlayer::GiveAmmo( 255,	"Buckshot");
-	CBasePlayer::GiveAmmo( 32,	"357" );
-	CBasePlayer::GiveAmmo( 3,	"rpg_round");
+	// Melee weapons
+	GiveNamedItem( "tf_weapon_crowbar" );
+	GiveNamedItem( "tf_weapon_knife" );
+	GiveNamedItem( "tf_weapon_spanner" );
+	GiveNamedItem( "tf_weapon_umbrella" );
+	GiveNamedItem( "tf_weapon_medikit" );
 
-	CBasePlayer::GiveAmmo( 1,	"grenade" );
-	CBasePlayer::GiveAmmo( 2,	"slam" );
-
-	GiveNamedItem( "weapon_crowbar" );
-	GiveNamedItem( "weapon_stunstick" );
-	GiveNamedItem( "weapon_pistol" );
-	GiveNamedItem( "weapon_357" );
-
-	GiveNamedItem( "weapon_smg1" );
-	GiveNamedItem( "weapon_ar2" );
-	
-	GiveNamedItem( "weapon_shotgun" );
-	GiveNamedItem( "weapon_frag" );
-	
-	GiveNamedItem( "weapon_crossbow" );
-	
-	GiveNamedItem( "weapon_rpg" );
-
-	GiveNamedItem( "weapon_slam" );
-
-	GiveNamedItem( "weapon_physcannon" );
-	
+	// Guns
+	GiveNamedItem( "tf_weapon_ac" );
+	GiveNamedItem( "tf_weapon_ng" );
+	GiveNamedItem( "tf_weapon_shotgun" );
+	GiveNamedItem( "tf_weapon_superng" );
+	GiveNamedItem( "tf_weapon_supershotgun" );
 }
 
 void CHL2MP_Player::GiveDefaultItems( void )
 {
 	EquipSuit();
 
-	CBasePlayer::GiveAmmo( 255,	"Pistol");
-	CBasePlayer::GiveAmmo( 45,	"SMG1");
-	CBasePlayer::GiveAmmo( 1,	"grenade" );
-	CBasePlayer::GiveAmmo( 6,	"Buckshot");
-	CBasePlayer::GiveAmmo( 6,	"357" );
-
-	if ( GetPlayerModelType() == PLAYER_SOUNDS_METROPOLICE || GetPlayerModelType() == PLAYER_SOUNDS_COMBINESOLDIER )
-	{
-		GiveNamedItem( "weapon_stunstick" );
-	}
-	else if ( GetPlayerModelType() == PLAYER_SOUNDS_CITIZEN )
-	{
-		GiveNamedItem( "weapon_crowbar" );
-	}
-	
-	GiveNamedItem( "weapon_pistol" );
-	GiveNamedItem( "weapon_smg1" );
-	GiveNamedItem( "weapon_frag" );
-	GiveNamedItem( "weapon_physcannon" );
-
-	const char *szDefaultWeaponName = engine->GetClientConVarValue( engine->IndexOfEdict( edict() ), "cl_defaultweapon" );
-
-	CBaseCombatWeapon *pDefaultWeapon = Weapon_OwnsThisType( szDefaultWeaponName );
-
-	if ( pDefaultWeapon )
-	{
-		Weapon_Switch( pDefaultWeapon );
-	}
-	else
-	{
-		Weapon_Switch( Weapon_OwnsThisType( "weapon_physcannon" ) );
-	}
+	GiveNamedItem( "tf_weapon_crowbar" );
 }
 
 void CHL2MP_Player::PickDefaultSpawnTeam( void )
@@ -396,19 +334,12 @@ void CHL2MP_Player::Spawn(void)
 
 	SetPlayerUnderwater(false);
 
-	m_bReady = false;
-
 	m_cycleLatchTimer.Start( CYCLELATCH_UPDATE_INTERVAL );
 
 	//Tony; do the spawn animevent
 	DoAnimationEvent( PLAYERANIMEVENT_SPAWN );
 
 	SetContextThink( &CHL2MP_Player::HL2MPPushawayThink, gpGlobals->curtime + PUSHAWAY_THINK_INTERVAL, HL2MP_PUSHAWAY_THINK_CONTEXT );
-}
-
-void CHL2MP_Player::PickupObject( CBaseEntity *pObject, bool bLimitMassAndSize )
-{
-	BaseClass::PickupObject( pObject, bLimitMassAndSize );
 }
 
 bool CHL2MP_Player::ValidatePlayerModel( const char *pModel )
@@ -481,7 +412,6 @@ void CHL2MP_Player::SetPlayerTeamModel( void )
 	}
 	
 	SetModel( szModelName );
-	SetupPlayerSoundsByModel( szModelName );
 
 	m_flNextModelChangeTime = gpGlobals->curtime + MODEL_CHANGE_INTERVAL;
 }
@@ -575,36 +505,8 @@ void CHL2MP_Player::SetPlayerModel( void )
 	}
 
 	SetModel( szModelName );
-	SetupPlayerSoundsByModel( szModelName );
 
 	m_flNextModelChangeTime = gpGlobals->curtime + MODEL_CHANGE_INTERVAL;
-}
-
-void CHL2MP_Player::SetupPlayerSoundsByModel( const char *pModelName )
-{
-	if ( Q_stristr( pModelName, "models/player/human") )
-	{
-		m_iPlayerSoundType = (int)PLAYER_SOUNDS_CITIZEN;
-	}
-	else if ( Q_stristr(pModelName, "police" ) )
-	{
-		m_iPlayerSoundType = (int)PLAYER_SOUNDS_METROPOLICE;
-	}
-	else if ( Q_stristr(pModelName, "combine" ) )
-	{
-		m_iPlayerSoundType = (int)PLAYER_SOUNDS_COMBINESOLDIER;
-	}
-	else
-	{
-		m_iPlayerSoundType = (int)PLAYER_SOUNDS_CITIZEN;
-	}
-}
-
-bool CHL2MP_Player::Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelindex )
-{
-	bool bRet = BaseClass::Weapon_Switch( pWeapon, viewmodelindex );
-
-	return bRet;
 }
 
 void CHL2MP_Player::PreThink( void )
@@ -921,26 +823,6 @@ void CHL2MP_Player::CheatImpulseCommands( int iImpulse )
 	}
 }
 
-bool CHL2MP_Player::ShouldRunRateLimitedCommand( const CCommand &args )
-{
-	int i = m_RateLimitLastCommandTimes.Find( args[0] );
-	if ( i == m_RateLimitLastCommandTimes.InvalidIndex() )
-	{
-		m_RateLimitLastCommandTimes.Insert( args[0], gpGlobals->curtime );
-		return true;
-	}
-	else if ( (gpGlobals->curtime - m_RateLimitLastCommandTimes[i]) < HL2MP_COMMAND_MAX_RATE )
-	{
-		// Too fast.
-		return false;
-	}
-	else
-	{
-		m_RateLimitLastCommandTimes[i] = gpGlobals->curtime;
-		return true;
-	}
-}
-
 void CHL2MP_Player::CreateViewModel( int index /*=0*/ )
 {
 	Assert( index >= 0 && index < MAX_VIEWMODELS );
@@ -1067,45 +949,6 @@ void CHL2MP_Player::FlashlightTurnOff( void )
 	}
 }
 
-void CHL2MP_Player::Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector *pvecTarget, const Vector *pVelocity )
-{
-#ifndef TFC_DLL
-	//Drop a grenade if it's primed.
-	if ( GetActiveWeapon() )
-	{
-		CBaseCombatWeapon *pGrenade = Weapon_OwnsThisType( "weapon_frag" );
-		if ( GetActiveWeapon() == pGrenade )
-		{
-			if ( ( m_nButtons & IN_ATTACK ) || ( m_nButtons & IN_ATTACK2 ) )
-			{
-				DropPrimedFragGrenade( this, pGrenade );
-				return;
-			}
-		}
-	}
-#endif // !TFC_DLL
-
-	BaseClass::Weapon_Drop( pWeapon, pvecTarget, pVelocity );
-}
-
-
-void CHL2MP_Player::DetonateTripmines( void )
-{
-	CBaseEntity *pEntity = NULL;
-
-	while ((pEntity = gEntList.FindEntityByClassname( pEntity, "npc_satchel" )) != NULL)
-	{
-		CSatchelCharge *pSatchel = dynamic_cast<CSatchelCharge *>(pEntity);
-		if (pSatchel->m_bIsLive && pSatchel->GetThrower() == this )
-		{
-			g_EventQueue.AddEvent( pSatchel, "Explode", 0.20, this, this );
-		}
-	}
-
-	// Play sound for pressing the detonator
-	EmitSound( "Weapon_SLAM.SatchelDetonate" );
-}
-
 void CHL2MP_Player::Event_Killed( const CTakeDamageInfo &info )
 {
 	//update damage info with our accumulated physics force
@@ -1116,16 +959,12 @@ void CHL2MP_Player::Event_Killed( const CTakeDamageInfo &info )
 	// because we still want to transmit to the clients in our PVS.
 	CreateRagdollEntity();
 
-	DetonateTripmines();
-
 	BaseClass::Event_Killed( subinfo );
 
 	if ( info.GetDamageType() & DMG_DISSOLVE )
 	{
 		if ( m_hRagdoll )
-		{
 			m_hRagdoll->GetBaseAnimating()->Dissolve( NULL, gpGlobals->curtime, false, ENTITY_DISSOLVE_NORMAL );
-		}
 	}
 
 	CBaseEntity *pAttacker = info.GetAttacker();
@@ -1135,9 +974,7 @@ void CHL2MP_Player::Event_Killed( const CTakeDamageInfo &info )
 		int iScoreToAdd = 1;
 
 		if ( pAttacker == this )
-		{
 			iScoreToAdd = -1;
-		}
 
 		GetGlobalTeam( pAttacker->GetTeamNumber() )->AddScore( iScoreToAdd );
 	}
@@ -1152,47 +989,11 @@ void CHL2MP_Player::Event_Killed( const CTakeDamageInfo &info )
 
 int CHL2MP_Player::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 {
-	//return here if the player is in the respawn grace period vs. slams.
-	if ( gpGlobals->curtime < m_flSlamProtectTime &&  (inputInfo.GetDamageType() == DMG_BLAST ) )
-		return 0;
-
 	m_vecTotalBulletForce += inputInfo.GetDamageForce();
 	
 	gamestats->Event_PlayerDamage( this, inputInfo );
 
 	return BaseClass::OnTakeDamage( inputInfo );
-}
-
-void CHL2MP_Player::DeathSound( const CTakeDamageInfo &info )
-{
-	if ( m_hRagdoll && m_hRagdoll->GetBaseAnimating()->IsDissolving() )
-		 return;
-
-	char szStepSound[128];
-
-	Q_snprintf( szStepSound, sizeof( szStepSound ), "%s.Die", GetPlayerModelSoundPrefix() );
-
-	const char *pModelName = STRING( GetModelName() );
-
-	CSoundParameters params;
-	if ( GetParametersForSound( szStepSound, params, pModelName ) == false )
-		return;
-
-	Vector vecOrigin = GetAbsOrigin();
-	
-	CRecipientFilter filter;
-	filter.AddRecipientsByPAS( vecOrigin );
-
-	EmitSound_t ep;
-	ep.m_nChannel = params.channel;
-	ep.m_pSoundName = params.soundname;
-	ep.m_flVolume = params.volume;
-	ep.m_SoundLevel = params.soundlevel;
-	ep.m_nFlags = 0;
-	ep.m_nPitch = params.pitch;
-	ep.m_pOrigin = &vecOrigin;
-
-	EmitSound( filter, entindex(), ep );
 }
 
 CBaseEntity* CHL2MP_Player::EntSelectSpawnPoint( void )
@@ -1289,95 +1090,8 @@ ReturnSpot:
 
 	g_pLastSpawn = pSpot;
 
-	m_flSlamProtectTime = gpGlobals->curtime + 0.5;
-
 	return pSpot;
 } 
-
-
-CON_COMMAND( timeleft, "prints the time remaining in the match" )
-{
-	CHL2MP_Player *pPlayer = ToHL2MPPlayer( UTIL_GetCommandClient() );
-
-	int iTimeRemaining = (int)HL2MPRules()->GetMapRemainingTime();
-	
-	if ( iTimeRemaining == 0 )
-	{
-		if ( pPlayer )
-		{
-			ClientPrint( pPlayer, HUD_PRINTTALK, "This game has no timelimit." );
-		}
-		else
-		{
-			Msg( "* No Time Limit *\n" );
-		}
-	}
-	else
-	{
-		int iMinutes, iSeconds;
-		iMinutes = iTimeRemaining / 60;
-		iSeconds = iTimeRemaining % 60;
-
-		char minutes[8];
-		char seconds[8];
-
-		Q_snprintf( minutes, sizeof(minutes), "%d", iMinutes );
-		Q_snprintf( seconds, sizeof(seconds), "%2.2d", iSeconds );
-
-		if ( pPlayer )
-		{
-			ClientPrint( pPlayer, HUD_PRINTTALK, "Time left in map: %s1:%s2", minutes, seconds );
-		}
-		else
-		{
-			Msg( "Time Remaining:  %s:%s\n", minutes, seconds );
-		}
-	}	
-}
-
-
-void CHL2MP_Player::Reset()
-{	
-	ResetDeathCount();
-	ResetFragCount();
-}
-
-bool CHL2MP_Player::IsReady()
-{
-	return m_bReady;
-}
-
-void CHL2MP_Player::SetReady( bool bReady )
-{
-	m_bReady = bReady;
-}
-
-void CHL2MP_Player::CheckChatText( char *p, int bufsize )
-{
-	//Look for escape sequences and replace
-
-	char *buf = new char[bufsize];
-	int pos = 0;
-
-	// Parse say text for escape sequences
-	for ( char *pSrc = p; pSrc != NULL && *pSrc != 0 && pos < bufsize-1; pSrc++ )
-	{
-		// copy each char across
-		buf[pos] = *pSrc;
-		pos++;
-	}
-
-	buf[pos] = '\0';
-
-	// copy buf back into p
-	Q_strncpy( p, buf, bufsize );
-
-	delete[] buf;	
-
-	const char *pReadyCheck = p;
-
-	HL2MPRules()->CheckChatForReadySignal( this, pReadyCheck );
-}
 
 void CHL2MP_Player::State_Transition( HL2MPPlayerState newState )
 {
@@ -1501,46 +1215,6 @@ void CHL2MP_Player::State_PreThink_ACTIVE()
 	//This state_prethink structure came over from CS:S and was doing an assert check that fails the way hl2dm handles death
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-bool CHL2MP_Player::CanHearAndReadChatFrom( CBasePlayer *pPlayer )
-{
-	// can always hear the console unless we're ignoring all chat
-	if ( !pPlayer )
-		return false;
-
-	return true;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: multiplayer does not do autoaiming.
-//-----------------------------------------------------------------------------
-Vector CHL2MP_Player::GetAutoaimVector( float flScale )
-{
-	//No Autoaim
-	Vector	forward;
-	AngleVectors( EyeAngles() + m_Local.m_vecPunchAngle, &forward );
-	return	forward;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Do nothing multiplayer_animstate takes care of animation.
-// Input  : playerAnim - 
-//-----------------------------------------------------------------------------
-void CHL2MP_Player::SetAnimation( PLAYER_ANIM playerAnim )
-{
-	if ( playerAnim == PLAYER_WALK || playerAnim == PLAYER_IDLE ) 
-		return;
-
-    if ( playerAnim == PLAYER_RELOAD )
-        DoAnimationEvent( PLAYERANIMEVENT_RELOAD );
-    else if ( playerAnim == PLAYER_JUMP )
-        DoAnimationEvent( PLAYERANIMEVENT_JUMP );
-    else
-        Assert( !"CHL2MP_Player::SetAnimation OBSOLETE!" );
-}
-
 // -------------------------------------------------------------------------------- //
 // Player animation event. Sent to the client when a player fires, jumps, reloads, etc..
 // -------------------------------------------------------------------------------- //
@@ -1578,13 +1252,6 @@ void TE_PlayerAnimEvent( CBasePlayer *pPlayer, PlayerAnimEvent_t event, int nDat
 	g_TEPlayerAnimEvent.m_iEvent = event;
 	g_TEPlayerAnimEvent.m_nData = nData;
 	g_TEPlayerAnimEvent.Create( filter, 0 );
-}
-
-
-void CHL2MP_Player::DoAnimationEvent( PlayerAnimEvent_t event, int nData )
-{
-	m_PlayerAnimState->DoAnimationEvent( event, nData );
-	TE_PlayerAnimEvent( this, event, nData );	// Send to any clients who can see this guy.
 }
 
 //-----------------------------------------------------------------------------

@@ -44,20 +44,17 @@ public:
 	CHL2MP_Player();
 	~CHL2MP_Player( void );
 	
-#ifndef TFC_DLL
 	static CHL2MP_Player *CreatePlayer( const char *className, edict_t *ed )
 	{
 		CHL2MP_Player::s_PlayerEdict = ed;
 		return ( CHL2MP_Player* )CreateEntityByName( className );
 	}
-#endif // !TFC_DLL
 
 	DECLARE_SERVERCLASS();
 	DECLARE_DATADESC();
 	DECLARE_PREDICTABLE();
 
 	// This passes the event to the client's and server's CHL2MPPlayerAnimState.
-	void			DoAnimationEvent( PlayerAnimEvent_t event, int nData = 0 );
 	void			SetupBones( matrix3x4_t *pBoneToWorld, int boneMask );
 
 	virtual void Precache( void );
@@ -73,24 +70,15 @@ public:
 	virtual int OnTakeDamage( const CTakeDamageInfo &inputInfo );
 	virtual bool WantsLagCompensationOnEntity( const CBasePlayer *pPlayer, const CUserCmd *pCmd, const CBitVec<MAX_EDICTS> *pEntityTransmitBits ) const;
 	virtual void FireBullets ( const FireBulletsInfo_t &info );
-	virtual bool Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelindex = 0);
 	virtual bool BumpWeapon( CBaseCombatWeapon *pWeapon );
 	virtual void ChangeTeam( int iTeam );
-	virtual void PickupObject ( CBaseEntity *pObject, bool bLimitMassAndSize );
-	virtual void PlayStepSound( Vector &vecOrigin, surfacedata_t *psurface, float fvol, bool force );
-	virtual void Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector *pvecTarget = NULL, const Vector *pVelocity = NULL );
 	virtual void UpdateOnRemove( void );
-	virtual void DeathSound( const CTakeDamageInfo &info );
 	virtual CBaseEntity* EntSelectSpawnPoint( void );
 		
 	int FlashlightIsOn( void );
 	void FlashlightTurnOn( void );
 	void FlashlightTurnOff( void );
-	void	PrecacheFootStepSounds( void );
 	bool	ValidatePlayerModel( const char *pModel );
-
-	Vector GetAttackSpread( CBaseCombatWeapon *pWeapon, CBaseEntity *pTarget = NULL );
-	virtual Vector GetAutoaimVector( float flDelta );
 
 	void CheatImpulseCommands( int iImpulse );
 	void CreateRagdollEntity( void );
@@ -99,8 +87,6 @@ public:
 
 	void NoteWeaponFired( void );
 
-	void SetAnimation( PLAYER_ANIM playerAnim );
-
 	void SetPlayerModel( void );
 	void SetPlayerTeamModel( void );
 	Activity TranslateTeamActivity( Activity ActToTranslate );
@@ -108,18 +94,6 @@ public:
 	float GetNextModelChangeTime( void ) { return m_flNextModelChangeTime; }
 	float GetNextTeamChangeTime( void ) { return m_flNextTeamChangeTime; }
 	void  PickDefaultSpawnTeam( void );
-	void  SetupPlayerSoundsByModel( const char *pModelName );
-	const char *GetPlayerModelSoundPrefix( void );
-	int	  GetPlayerModelType( void ) { return m_iPlayerSoundType;	}
-	
-	void  DetonateTripmines( void );
-
-	void Reset();
-
-	bool IsReady();
-	void SetReady( bool bReady );
-
-	void CheckChatText( char *p, int bufsize );
 
 	void State_Transition( HL2MPPlayerState newState );
 	void State_Enter( HL2MPPlayerState newState );
@@ -132,21 +106,28 @@ public:
 	void State_Enter_OBSERVER_MODE();
 	void State_PreThink_OBSERVER_MODE();
 
-
 	virtual bool StartObserverMode( int mode );
 	virtual void StopObserverMode( void );
-
 
 	Vector m_vecTotalBulletForce;	//Accumulator for bullet force in a single frame
 
 	// Tracks our ragdoll entity.
 	CNetworkHandle( CBaseEntity, m_hRagdoll );	// networked entity handle 
 
-	virtual bool	CanHearAndReadChatFrom( CBasePlayer *pPlayer );
-
 	// Player avoidance
-	virtual	bool		ShouldCollide( int collisionGroup, int contentsMask ) const;
 	void HL2MPPushawayThink(void);
+
+// shared code
+public:
+
+	Vector GetAttackSpread( CBaseCombatWeapon *pWeapon, CBaseEntity *pTarget = NULL );
+	virtual Vector GetAutoaimVector( float flDelta );
+	virtual void TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
+	void DoAnimationEvent( PlayerAnimEvent_t event, int nData = 0 );
+	//Tony; when model is changed, need to init some stuff.
+	virtual CStudioHdr *OnNewModel( void );
+	void SetAnimation( PLAYER_ANIM playerAnim );
+	bool ShouldCollide( int collisionGroup, int contentsMask ) const;
 
 private:
 
@@ -157,23 +138,14 @@ private:
 	int m_iLastWeaponFireUsercmd;
 	int m_iModelType;
 	CNetworkVar( int, m_iSpawnInterpCounter );
-	CNetworkVar( int, m_iPlayerSoundType );
 
 	float m_flNextModelChangeTime;
 	float m_flNextTeamChangeTime;
 
-	float m_flSlamProtectTime;	
-
 	HL2MPPlayerState m_iPlayerState;
 	CHL2MPPlayerStateInfo *m_pCurStateInfo;
 
-	bool ShouldRunRateLimitedCommand( const CCommand &args );
-
-	// This lets us rate limit the commands the players can execute so they don't overflow things like reliable buffers.
-	CUtlDict<float,int>	m_RateLimitLastCommandTimes;
-
 	bool m_bEnterObserver;
-	bool m_bReady;
 
 	CNetworkVar( int, m_cycleLatch ); // Network the cycle to clients periodically
 	CountdownTimer m_cycleLatchTimer;

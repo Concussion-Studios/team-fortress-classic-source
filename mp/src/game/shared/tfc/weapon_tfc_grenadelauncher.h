@@ -37,7 +37,7 @@ public:
 	virtual void	Precache( void );
 	virtual void	PrimaryAttack( void );
 
-	virtual TFCWeaponID GetWeaponID( void ) const { return WEAPON_GRENADELAUNCHER; }
+	virtual TFCWeaponID GetWeaponID( void ) const { return TF_WEAPON_GRENADELAUNCHER; }
 
 protected:
 

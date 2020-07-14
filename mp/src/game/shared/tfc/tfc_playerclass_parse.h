@@ -61,14 +61,14 @@ TFCPlayerClassInfo_t *GetClassData( int iClass );
 //-----------------------------------------------------------------------------
 // TFC Player Class
 //-----------------------------------------------------------------------------
-class CTFCPlayerClassShared
+class CHL2MP_PlayerClassShared
 {
 public:
 
-	CTFCPlayerClassShared();
+	CHL2MP_PlayerClassShared();
 
 	DECLARE_EMBEDDED_NETWORKVAR()
-	DECLARE_CLASS_NOBASE( CTFCPlayerClassShared );
+	DECLARE_CLASS_NOBASE( CHL2MP_PlayerClassShared );
 
 	bool		Init( int iClass );
 	bool		IsClass( int iClass ) const						{ return ( m_iClass == iClass ); }

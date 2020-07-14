@@ -8,9 +8,9 @@
 #include "tfc_gamerules.h"
 
 #if defined( CLIENT_DLL )
-	#include "c_tfc_player.h"
+	#include "c_hl2mp_player.h"
 #else
-	#include "tfc_player.h"
+	#include "hl2mp_player.h"
 #endif
 
 // ----------------------------------------------------------------------------- //
@@ -57,12 +57,12 @@ CTFCMedikit::CTFCMedikit()
 		/*flDamage = 0;
 		*bDoEffects = false;
 
-		CTFCPlayer *pPlayer = GetPlayerOwner();
+		CHL2MP_Player *pPlayer = GetPlayerOwner();
 		if ( !pPlayer )
 			return;
 
 		// We only care about players.
-		CTFCPlayer *pTarget = ToTFCPlayer( pHit );
+		CHL2MP_Player *pTarget = ToHL2MPPlayer( pHit );
 		if ( !pTarget )
 			return;
 

@@ -8,9 +8,9 @@
 #include "decals.h"
 
 #if defined( CLIENT_DLL )
-	#include "c_tfc_player.h"
+	#include "c_hl2mp_player.h"
 #else
-	#include "tfc_player.h"
+	#include "hl2mp_player.h"
 	#include "ilagcompensationmanager.h"
 	#include "util.h"
 #endif
@@ -116,7 +116,7 @@ void CWeaponTFCBaseMelee::ItemPostFrame()
 
 void CWeaponTFCBaseMelee::WeaponIdle( void )
 {
-	CTFCPlayer *pPlayer = GetPlayerOwner();
+	CHL2MP_Player *pPlayer = GetPlayerOwner();
 	if ( !pPlayer )
 		return;
 
@@ -131,7 +131,7 @@ void CWeaponTFCBaseMelee::WeaponIdle( void )
 
 void CWeaponTFCBaseMelee::PrimaryAttack()
 {
-	CTFCPlayer *pPlayer = GetPlayerOwner();
+	CHL2MP_Player *pPlayer = GetPlayerOwner();
 
 #if !defined (CLIENT_DLL)
 	// Move other players back to history positions based on local player's lag
@@ -166,7 +166,7 @@ void CWeaponTFCBaseMelee::PrimaryAttack()
 	bool bFirstSwing = (gpGlobals->curtime - m_flStoredPrimaryAttack) >= 1;
 #endif
 
-	pPlayer->DoAnimationEvent( PLAYERANIMEVENT_FIRE_GUN );
+	pPlayer->DoAnimationEvent( PLAYERANIMEVENT_ATTACK_PRIMARY );
 
 	m_flTimeWeaponIdle = gpGlobals->curtime + 2;
 	m_flNextPrimaryAttack = gpGlobals->curtime + 0.4f;

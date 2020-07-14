@@ -4,7 +4,7 @@
 //
 //=============================================================================//
 #include "cbase.h"
-#include "tfc_player.h"
+#include "hl2mp_player.h"
 #include "gamerules.h"
 #include "teamplay_gamerules.h"
 #include "entitylist.h"
@@ -22,7 +22,7 @@
 extern CBaseEntity*	FindPickerEntityClass( CBasePlayer *pPlayer, char *classname );
 extern bool	g_fGameOver;
 
-void FinishClientPutInServer( CTFCPlayer *pPlayer )
+void FinishClientPutInServer( CHL2MP_Player *pPlayer )
 {
 	bool save = engine->LockNetworkStringTables( false );
 	
@@ -58,8 +58,8 @@ called each time a player is spawned into the game
 */
 void ClientPutInServer( edict_t *pEdict, const char *playername )
 {
-	// Allocate a CTFCPlayer for pev, and call spawn
-	CTFCPlayer *pPlayer = CTFCPlayer::CreatePlayer( "player", pEdict );
+	// Allocate a CHL2MP_Player for pev, and call spawn
+	CHL2MP_Player *pPlayer = CHL2MP_Player::CreatePlayer( "player", pEdict );
 	pPlayer->SetPlayerName( playername );
 }
 
@@ -69,7 +69,7 @@ void ClientActive( edict_t *pEdict, bool bLoadGame )
 	// Can't load games in CS!
 	Assert( !bLoadGame );
 
-	CTFCPlayer *pPlayer = ToTFCPlayer( CBaseEntity::Instance( pEdict ) );
+	CHL2MP_Player *pPlayer = ToHL2MPPlayer( CBaseEntity::Instance( pEdict ) );
 	FinishClientPutInServer( pPlayer );
 }
 

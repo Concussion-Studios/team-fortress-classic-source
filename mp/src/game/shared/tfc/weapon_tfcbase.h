@@ -29,14 +29,14 @@
 #pragma once
 #endif
 
-#include "tfc_playeranimstate.h"
+#include "hl2mp_player_shared.h"
 #include "weapon_hl2mpbase.h"
 
 #if defined( CLIENT_DLL )
 	#define CWeaponTFCBase C_WeaponTFCBase
 #endif
 
-class CTFCPlayer;
+class CHL2MP_Player;
 
 class CWeaponTFCBase : public CWeaponHL2MPBase
 {
@@ -56,18 +56,15 @@ public:
 	virtual void Spawn() OVERRIDE;
 	virtual Vector GetSoundEmissionOrigin() const OVERRIDE;
 	virtual bool PhysicsSplash( const Vector &centerPoint, const Vector &normal, float rawSpeed, float scaledSpeed ) OVERRIDE;
-
-	bool DefaultReload( int iClipSize1, int iClipSize2, int iActivity );
-	void SendReloadSoundEvent();
 #endif
 
-	CTFCPlayer* GetPlayerOwner() const;
+	CHL2MP_Player* GetPlayerOwner() const;
 
 	// Get TFC-specific weapon data.
 	//CTFCWeaponInfo const	&GetTFCWpnData() const;
 
 	// Get specific TFC weapon ID (ie: WEAPON_RPG, etc)
-	virtual TFCWeaponID GetWeaponID( void ) const {	Assert( false ); return WEAPON_NONE; }
+	virtual TFCWeaponID GetWeaponID( void ) const {	Assert( false ); return TF_WEAPON_NONE; }
 
 	// return true if this weapon is an instance of the given weapon type (ie: "IsA" WEAPON_TRANQ)
 	bool IsA( TFCWeaponID id ) const { return GetWeaponID() == id; }

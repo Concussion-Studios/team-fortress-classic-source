@@ -30,7 +30,7 @@ public:
 	
 	CTFCMedikit();
 
-	virtual TFCWeaponID GetWeaponID( void ) const { return WEAPON_MEDIKIT; }
+	virtual TFCWeaponID GetWeaponID( void ) const { return TF_WEAPON_MEDIKIT; }
 
 
 #ifndef CLIENT_DLL

@@ -41,7 +41,7 @@ public:
 	virtual void Smack();
 
 	// Get specific TFC weapon ID (ie: WEAPON_AK47, etc)
-	virtual TFCWeaponID GetWeaponID( void ) const {	Assert( false ); return WEAPON_NONE; }
+	virtual TFCWeaponID GetWeaponID( void ) const {	Assert( false ); return TF_WEAPON_NONE; }
 
 // Overrideables.
 public:

@@ -32,7 +32,7 @@ public:
 
 	CTFCShotgun();
 
-	virtual TFCWeaponID GetWeaponID( void ) const {	return WEAPON_SHOTGUN;}
+	virtual TFCWeaponID GetWeaponID( void ) const {	return TF_WEAPON_SHOTGUN;}
 
 	virtual void PrimaryAttack();
 	virtual void SecondaryAttack() { return; }

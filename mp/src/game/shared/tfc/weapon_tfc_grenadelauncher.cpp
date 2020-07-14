@@ -9,9 +9,9 @@
 #include "weapon_tfc_grenadelauncher.h"
 
 #ifdef CLIENT_DLL
-	#include "c_tfc_player.h"
+	#include "c_hl2mp_player.h"
 #else
-	#include "tfc_player.h"
+	#include "hl2mp_player.h"
 	#include "grenade_frag.h"
 #endif
 
@@ -59,7 +59,7 @@ void CTFCGrenadeLauncher::Precache( void )
 void CTFCGrenadeLauncher::PrimaryAttack( void )
 {
 	// Only the player fires this way so we can cast
-	CTFCPlayer *pPlayer = dynamic_cast< CTFCPlayer* >( GetOwner() );
+	CHL2MP_Player *pPlayer = dynamic_cast< CHL2MP_Player* >( GetOwner() );
 	if ( pPlayer == NULL )
 		return;
 
@@ -98,7 +98,7 @@ void CTFCGrenadeLauncher::PrimaryAttack( void )
 	SendWeaponAnim( ACT_VM_PRIMARYATTACK );
 
 	// player "shoot" animation
-	pPlayer->DoAnimationEvent( PLAYERANIMEVENT_FIRE_GUN );
+	pPlayer->DoAnimationEvent( PLAYERANIMEVENT_ATTACK_PRIMARY );
 
 	// Decrease ammo
 	pPlayer->RemoveAmmo( 1, m_iPrimaryAmmoType );

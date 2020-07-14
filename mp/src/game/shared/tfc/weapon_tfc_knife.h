@@ -31,7 +31,7 @@ public:
 	CTFCKnife();
 
 	virtual void Smack() OVERRIDE;
-	virtual TFCWeaponID GetWeaponID( void ) const { return WEAPON_KNIFE; }
+	virtual TFCWeaponID GetWeaponID( void ) const { return TF_WEAPON_KNIFE; }
 
 private:
 	CTFCKnife( const CTFCKnife & ) {}

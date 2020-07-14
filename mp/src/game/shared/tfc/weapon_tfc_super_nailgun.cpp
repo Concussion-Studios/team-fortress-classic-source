@@ -9,9 +9,9 @@
 #include "in_buttons.h"
 
 #if defined( CLIENT_DLL )
-	#include "c_tfc_player.h"
+	#include "c_hl2mp_player.h"
 #else
-	#include "tfc_player.h"
+	#include "hl2mp_player.h"
 	#include "nailgun_nail.h"
 #endif
 
@@ -43,7 +43,7 @@ CTFCSuperNailgun::CTFCSuperNailgun()
 
 void CTFCSuperNailgun::PrimaryAttack()
 {
-	CTFCPlayer *pOwner = GetPlayerOwner();
+	CHL2MP_Player *pOwner = GetPlayerOwner();
 	if ( !pOwner )
 		return;
 
@@ -52,7 +52,7 @@ void CTFCSuperNailgun::PrimaryAttack()
 	// Effects.
 	WeaponSound( SINGLE );
 	SendWeaponAnim( ACT_VM_PRIMARYATTACK );
-	pOwner->DoAnimationEvent( PLAYERANIMEVENT_FIRE_GUN );
+	pOwner->DoAnimationEvent( PLAYERANIMEVENT_ATTACK_PRIMARY );
 
 	// Create the nail.
 	int iCurrentAmmoCount = pOwner->GetAmmoCount( GetPrimaryAmmoType() );

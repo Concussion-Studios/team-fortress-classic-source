@@ -27,7 +27,7 @@ public:
 
 	CTFCCrowbar();
 
-	virtual TFCWeaponID GetWeaponID( void ) const { return WEAPON_CROWBAR; }
+	virtual TFCWeaponID GetWeaponID( void ) const { return TF_WEAPON_CROWBAR; }
 
 // Overrideables.
 public:

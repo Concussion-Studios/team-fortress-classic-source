@@ -11,7 +11,7 @@
 #include "ammodef.h"
 
 #ifdef CLIENT_DLL
-	#include "c_tfc_player.h"
+	#include "c_hl2mp_player.h"
 #else
 
 	#include "eventqueue.h"
@@ -25,12 +25,17 @@
 	#include <ctype.h>
 	#include "voice_gamemgr.h"
 	#include "iscorer.h"
-	#include "tfc_player.h"
+	#include "hl2mp_player.h"
 	#include "weapon_hl2mpbasehlmpcombatweapon.h"
 	#include "team.h"
 	#include "voice_gamemgr.h"
 	#include "gameinterface.h"
+
+	extern ConVar sv_report_client_settings;
 #endif
+
+// (We clamp ammo ourselves elsewhere).
+ConVar ammo_max( "ammo_max", "5000", FCVAR_REPLICATED );
 
 REGISTER_GAMERULES_CLASS( CTFCGameRules );
 
@@ -69,6 +74,35 @@ END_SEND_TABLE()
 //-----------------------------------------------------------------------------
 CTFCGameRules::CTFCGameRules()
 {
+#ifndef CLIENT_DLL
+    // Remove old HL2MP teams.
+    // This proobabbllyy isn't the best way of doing this...
+    CTeam* pTeam;
+    int i;
+
+    for ( i = 0; i < g_Teams.Size(); i++ )
+    {
+        pTeam = g_Teams.Element( i );
+
+        if ( pTeam )
+        {
+            DevMsg( "Removing old team: %s\n", pTeam->GetName() );
+            UTIL_Remove( pTeam );
+        }
+
+        g_Teams.Remove( i );
+        --i;
+    }
+
+	// Create the team list.
+    for ( int iTeam = 0; iTeam < TEAM_COUNT; ++iTeam )
+    {
+        CTeam* pNewTeam = static_cast<CTeam*>( CreateEntityByName( "team_manager" ) );
+        pNewTeam->Init( g_aTeamNames[i], i );
+		DevMsg( "Creating New team: %s\n", pNewTeam->GetName() );
+        g_Teams.AddToTail( pNewTeam );
+    }
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -82,6 +116,39 @@ CTFCGameRules::~CTFCGameRules( void )
 	g_Teams.Purge();
 #endif
 }
+
+#ifndef CLIENT_DLL
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool CTFCGameRules::ClientCommand( CBaseEntity *pEdict, const CCommand &args )
+{
+	if( CTeamplayRules::ClientCommand( pEdict, args ) )
+		return true;
+
+	CHL2MP_Player *pPlayer = ToHL2MPPlayer( pEdict );
+	if ( pPlayer->ClientCommand( args ) )
+		return true;
+
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CTFCGameRules::ClientSettingsChanged( CBasePlayer *pPlayer )
+{
+	CHL2MP_Player *pTFCPlayer = ToHL2MPPlayer( pPlayer );
+	if ( pTFCPlayer == NULL )
+		return;
+
+	if ( sv_report_client_settings.GetInt() == 1 )
+		UTIL_LogPrintf( "\"%s\" cl_cmdrate = \"%s\"\n", pTFCPlayer->GetPlayerName(), engine->GetClientConVarValue( pTFCPlayer->entindex(), "cl_cmdrate" ));
+
+	CTeamplayRules::ClientSettingsChanged( pPlayer );
+}
+
+#endif
 
 // shared ammo definition
 // JAY: Trying to make a more physical bullet response
@@ -105,10 +172,7 @@ CAmmoDef *GetAmmoDef()
 		// Start at 1 here and skip the dummy ammo type to make CAmmoDef use the same indices
 		// as our #defines.
 		for ( int i=1; i < AMMO_LAST; i++ )
-		{
 			def.AddAmmoType( g_aAmmoNames[i], DMG_BULLET, TRACER_LINE, 0, 0, "ammo_max", 2400, 10, 14 );
-			Assert( def.Index( g_aAmmoNames[i] ) == i );
-		}
 	}
 
 	return &def;

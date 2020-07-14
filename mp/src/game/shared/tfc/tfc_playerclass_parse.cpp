@@ -71,10 +71,10 @@ TFCPlayerClassInfo_t::TFCPlayerClassInfo_t()
 #endif
 
 	for ( int iWeapon = 0; iWeapon < TFC_MAX_WEAPON_SLOTS; ++iWeapon )
-		m_aWeapons[iWeapon] = WEAPON_NONE;
+		m_aWeapons[iWeapon] = TF_WEAPON_NONE;
 
 	for ( int iGrenade = 0; iGrenade < TFC_MAX_GRENADE_SLOTS; ++iGrenade )
-		m_aGrenades[iGrenade] = WEAPON_NONE;
+		m_aGrenades[iGrenade] = TF_WEAPON_NONE;
 
 	for ( int iAmmo = 0; iAmmo < AMMO_LAST; ++iAmmo )
 		m_aAmmoMax[iAmmo] = AMMO_DUMMY;
@@ -213,11 +213,11 @@ TFCPlayerClassInfo_t *GetClassData( int iClass )
 //
 
 #ifdef CLIENT_DLL
-BEGIN_RECV_TABLE_NOBASE( CTFCPlayerClassShared, DT_TFCPlayerClassShared )
+BEGIN_RECV_TABLE_NOBASE( CHL2MP_PlayerClassShared, DT_TFCPlayerClassShared )
 	RecvPropInt( RECVINFO( m_iClass ) ),
 END_RECV_TABLE()
 #else
-BEGIN_SEND_TABLE_NOBASE( CTFCPlayerClassShared, DT_TFCPlayerClassShared )
+BEGIN_SEND_TABLE_NOBASE( CHL2MP_PlayerClassShared, DT_TFCPlayerClassShared )
 	SendPropInt( SENDINFO( m_iClass ), Q_log2( CLASS_COUNT_ALL )+1, SPROP_UNSIGNED ),
 END_SEND_TABLE()
 #endif
@@ -225,7 +225,7 @@ END_SEND_TABLE()
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-CTFCPlayerClassShared::CTFCPlayerClassShared()
+CHL2MP_PlayerClassShared::CHL2MP_PlayerClassShared()
 {
 	m_iClass.Set( CLASS_UNDEFINED  );
 }
@@ -233,7 +233,7 @@ CTFCPlayerClassShared::CTFCPlayerClassShared()
 //-----------------------------------------------------------------------------
 // Purpose: Initialize the player class.
 //-----------------------------------------------------------------------------
-bool CTFCPlayerClassShared::Init( int iClass )
+bool CHL2MP_PlayerClassShared::Init( int iClass )
 {
 	Assert ( ( iClass >= CLASS_UNDEFINED ) && ( iClass <= CLASS_COUNT_ALL ) );
 	m_iClass = iClass;
