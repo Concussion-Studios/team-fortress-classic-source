@@ -1,0 +1,63 @@
+// Super Shotgun
+WeaponData
+{
+	// Weapon data is loaded by both the Game and Client DLLs.
+	"printname"				"Super Shotgun"
+	"viewmodel"				"models/weapons/v_shotgun.mdl"
+	"playermodel"			"models/weapons/w_shotgun.mdl"
+	"anim_prefix"			"shotgun"
+
+	"bucket"				"2"
+	"bucket_position"		"1"
+
+	"clip_size"				"6"
+	"primary_ammo"			"AMMO_SHELLS"
+	"secondary_ammo"		"None"
+
+	"weight"				"4"
+	"rumble"				"5"
+	"item_flags"			"0"
+
+	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
+	SoundData
+	{
+
+		"empty"				"Weapon_Shotgun.Empty"
+		"reload"			"Weapon_Shotgun.Reload"
+		"single_shot"		"Weapon_Shotgun.Single"
+	}
+
+	// Weapon Sprite data is loaded by the Client DLL.
+	TextureData
+	{
+		"weapon"
+		{
+			"file"		"sprites/320hud1"
+			"x"			"0"
+			"y"			"180"
+			"width"		"80"
+			"height"	"20"
+		}
+		"weapon_s"
+		{	
+			"file"		"sprites/320hud1"
+			"x"			"0"
+			"y"			"180"
+			"width"		"80"
+			"height"	"20"
+		}
+		"ammo"
+		{
+			"file"		"sprites/640hud7"
+			"x"			"72"
+			"y"			"72"
+			"width"		"24"
+			"height"	"24"
+		}
+		"crosshair"
+		{
+			"font"		"Crosshairs"
+			"character"	"Q"
+		}
+	}
+}

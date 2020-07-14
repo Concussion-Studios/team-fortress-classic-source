@@ -1,0 +1,67 @@
+// Assault Cannon
+WeaponData
+{
+	// Weapon data is loaded by both the Game and Client DLLs.
+	"printname"				"Assault Cannon"
+	"viewmodel"				"models/weapons/v_irifle.mdl"
+	"playermodel"			"models/weapons/w_irifle.mdl"
+	"anim_prefix"			"ar2"
+
+	"bucket"				"5"
+	"bucket_position"		"2"
+
+	"clip_size"				"30"
+	"default_clip"			"30"
+
+	"clip2_size"			"-1"
+	"default_clip2"			"-1"
+
+	"primary_ammo"			"AMMO_SHELLS"
+	"secondary_ammo"		"None"
+
+	"weight"				"5"
+	"rumble"				"4"
+	"item_flags"			"0"
+
+	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
+	SoundData
+	{
+		"empty"				"Weapon_IRifle.Empty"
+		"reload"			"Weapon_AR2.Reload"
+		"single_shot"		"Weapon_AR2.Single"
+	}
+
+	// Weapon Sprite data is loaded by the Client DLL.
+	TextureData
+	{
+		"weapon"
+		{
+			"file"		"sprites/tfchud04"
+			"x"			"175"
+			"y"			"20"
+			"width"		"80"
+			"height"	"20"
+		}
+		"weapon_s"
+		{	
+			"file"		"sprites/tfchud04"
+			"x"			"175"
+			"y"			"140"
+			"width"		"80"
+			"height"	"20"
+		}
+		"ammo"
+		{
+			"file"		"sprites/640hud7"
+			"x"			"72"
+			"y"			"72"
+			"width"		"24"
+			"height"	"24"
+		}
+		"crosshair"
+		{
+			"font"		"Crosshairs"
+			"character"	"Q"
+		}
+	}
+}
