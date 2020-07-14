@@ -1078,7 +1078,11 @@ void ClientModeShared::FireGameEvent( IGameEvent *event )
 				char szLocalized[100];
 				g_pVGuiLocalize->ConvertUnicodeToANSI( wszLocalized, szLocalized, sizeof(szLocalized) );
 
+#ifdef TFC_DLL
+				hudChat->Printf( CHAT_FILTER_TEAMCHANGE, "%s", szLocalized, COLOR_PLAYERNAME );
+#else
 				hudChat->Printf( CHAT_FILTER_TEAMCHANGE, "%s", szLocalized );
+#endif // TFC_DLL
 			}
 		}
 
