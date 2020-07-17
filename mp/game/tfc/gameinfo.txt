@@ -4,13 +4,13 @@
 	type multiplayer_only
 	gamelogo 1
 
+	GameData		"tfc.fgd"
+	InstancePath	"maps/instances/"
+
 	nomodels 0
 	nohimodel 1
 	nocrosshair 1
 	supportsvr	0
-	
-	GameData	"tfc.fgd"
-	InstancePath "maps/instances/"
 
 	hidden_maps
 	{
