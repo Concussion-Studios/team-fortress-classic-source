@@ -48,6 +48,8 @@ public:
 
 #ifdef CLIENT_DLL
 #else
+	virtual void CreateStandardEntities( void ) OVERRIDE;
+
 	virtual void ClientSettingsChanged( CBasePlayer *pPlayer ) OVERRIDE;
 	virtual bool ClientCommand( CBaseEntity *pEdict, const CCommand &args ) OVERRIDE;
 

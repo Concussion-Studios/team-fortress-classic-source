@@ -36,8 +36,8 @@
 int g_iLastCitizenModel = 0;
 int g_iLastCombineModel = 0;
 
-CBaseEntity	 *g_pLastCombineSpawn = NULL;
-CBaseEntity	 *g_pLastRebelSpawn = NULL;
+CBaseEntity	 *g_pLastBlueSpawn = NULL;
+CBaseEntity	 *g_pLastRedSpawn = NULL;
 extern CBaseEntity				*g_pLastSpawn;
 extern ConVar hl2_normspeed;
 extern int	gEvilImpulse101;
@@ -48,8 +48,8 @@ extern int	gEvilImpulse101;
 
 LINK_ENTITY_TO_CLASS( player, CHL2MP_Player );
 
-LINK_ENTITY_TO_CLASS( info_player_combine, CPointEntity );
-LINK_ENTITY_TO_CLASS( info_player_rebel, CPointEntity );
+LINK_ENTITY_TO_CLASS( info_player_blue, CPointEntity );
+LINK_ENTITY_TO_CLASS( info_player_red, CPointEntity );
 
 extern void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 
@@ -1007,13 +1007,13 @@ CBaseEntity* CHL2MP_Player::EntSelectSpawnPoint( void )
 	{
 		if ( GetTeamNumber() == TEAM_COMBINE )
 		{
-			pSpawnpointName = "info_player_combine";
-			pLastSpawnPoint = g_pLastCombineSpawn;
+			pSpawnpointName = "info_player_blue";
+			pLastSpawnPoint = g_pLastBlueSpawn;
 		}
 		else if ( GetTeamNumber() == TEAM_REBELS )
 		{
-			pSpawnpointName = "info_player_rebel";
-			pLastSpawnPoint = g_pLastRebelSpawn;
+			pSpawnpointName = "info_player_red";
+			pLastSpawnPoint = g_pLastRedSpawn;
 		}
 
 		if ( gEntList.FindEntityByClassname( NULL, pSpawnpointName ) == NULL )
@@ -1080,11 +1080,11 @@ ReturnSpot:
 	{
 		if ( GetTeamNumber() == TEAM_COMBINE )
 		{
-			g_pLastCombineSpawn = pSpot;
+			g_pLastBlueSpawn = pSpot;
 		}
 		else if ( GetTeamNumber() == TEAM_REBELS ) 
 		{
-			g_pLastRebelSpawn = pSpot;
+			g_pLastRedSpawn = pSpot;
 		}
 	}
 

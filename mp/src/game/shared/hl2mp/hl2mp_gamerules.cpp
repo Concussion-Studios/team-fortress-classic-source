@@ -44,8 +44,10 @@ ConVar sv_report_client_settings("sv_report_client_settings", "0", FCVAR_GAMEDLL
 
 extern ConVar mp_chattime;
 
+#ifndef TFC_DLL
 extern CBaseEntity	 *g_pLastCombineSpawn;
 extern CBaseEntity	 *g_pLastRebelSpawn;
+#endif // TFC_DLL
 
 #define WEAPON_MAX_DISTANCE_FROM_SPAWN 64
 
@@ -129,8 +131,6 @@ static const char *s_PreserveEnts[] =
 	"point_devshot_camera",
 	"", // END Marker
 };
-
-
 
 #ifdef CLIENT_DLL
 	void RecvProxy_HL2MPRules( const RecvProp *pProp, void **pOut, void *pData, int objectID )
@@ -232,8 +232,10 @@ void CHL2MPRules::CreateStandardEntities( void )
 
 	BaseClass::CreateStandardEntities();
 
+#ifndef TFC_DLL
 	g_pLastCombineSpawn = NULL;
-	g_pLastRebelSpawn = NULL;
+	g_pLastRebelsSpawn = NULL;
+#endif // TFC_DLL
 
 #ifdef DBGFLAG_ASSERT
 	CBaseEntity *pEnt = 

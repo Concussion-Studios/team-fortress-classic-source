@@ -32,6 +32,9 @@
 	#include "gameinterface.h"
 
 	extern ConVar sv_report_client_settings;
+
+	extern CBaseEntity	 *g_pLastBlueSpawn;
+	extern CBaseEntity	 *g_pLastRedSpawn;
 #endif
 
 // (We clamp ammo ourselves elsewhere).
@@ -91,6 +94,25 @@ CTFCGameRules::~CTFCGameRules( void )
 }
 
 #ifndef CLIENT_DLL
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CTFCGameRules::CreateStandardEntities( void )
+{
+	// Create the entity that will send our data to the client.
+	BaseClass::CreateStandardEntities();
+
+	g_pLastBlueSpawn = NULL;
+	g_pLastRedSpawn = NULL;
+
+#ifdef DBGFLAG_ASSERT
+	CBaseEntity *pEnt = 
+#endif
+
+	CBaseEntity::Create( "tfc_gamerules", vec3_origin, vec3_angle );
+	Assert( pEnt );
+}
+
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
