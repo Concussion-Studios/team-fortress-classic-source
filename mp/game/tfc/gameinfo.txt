@@ -56,6 +56,9 @@
 			game+game_write+mod+mod_write+default_write_path		|gameinfo_path|.
 			gamebin				|gameinfo_path|bin
 
+			// We look over our vpk above everything else
+			game				|gameinfo_path|tfcpak01.vpk
+	
 			// We search VPK files before ordinary folders, because most files will be found in
 			// VPK and we can avoid making thousands of file system calls to attempt to open files
 			// in folders where they don't exist.  (Searching a VPK is much faster than making an operating
