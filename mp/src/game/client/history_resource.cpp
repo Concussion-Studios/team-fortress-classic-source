@@ -117,7 +117,7 @@ void CHudHistoryResource::AddToHistory( int iType, int iId, int iCount )
 		if ( !iCount )
 			return;
 
-#if defined( CSTRIKE_DLL )
+#if defined ( CSTRIKE_DLL ) || defined ( TFC_DLL )
 		// don't leave blank gaps for ammo we're not going to display
 		const FileWeaponInfo_t *pWpnInfo = gWR.GetWeaponFromAmmo( iId );
 		if ( pWpnInfo && ( pWpnInfo->iMaxClip1 >= 0 || pWpnInfo->iMaxClip2 >= 0 ) )
@@ -125,7 +125,7 @@ void CHudHistoryResource::AddToHistory( int iType, int iId, int iCount )
 			if ( !pWpnInfo->iconSmall )
 				return;
 		}
-#endif
+#endif // CSTRIKE && TFC_DLL
 
 		// clear out any ammo pickup denied icons, since we can obviously pickup again
 		for ( int i = 0; i < m_PickupHistory.Count(); i++ )
@@ -337,7 +337,7 @@ void CHudHistoryResource::Paint( void )
 			case HISTSLOT_AMMO:
 				{
 					// Get the weapon we belong to
-#ifndef HL2MP
+#if !defined ( HL2MP ) || defined ( TFC_DLL )
 					const FileWeaponInfo_t *pWpnInfo = gWR.GetWeaponFromAmmo( m_PickupHistory[i].iId );
 					if ( pWpnInfo && ( pWpnInfo->iMaxClip1 >= 0 || pWpnInfo->iMaxClip2 >= 0 ) )
 					{
@@ -346,13 +346,13 @@ void CHudHistoryResource::Paint( void )
 						itemAmmoIcon = gWR.GetAmmoIconFromWeapon( m_PickupHistory[i].iId );
 					}
 					else
-#endif // HL2MP
+#endif // !HL2MP && TFC_DLL
 					{
 						itemIcon = gWR.GetAmmoIconFromWeapon( m_PickupHistory[i].iId );
 						itemAmmoIcon = NULL;
 					}
 
-#ifdef CSTRIKE_DLL
+#if defined ( CSTRIKE_DLL ) || defined ( TFC_DLL )
 					// show grenades as the weapon icon
 					if ( pWpnInfo && pWpnInfo->iFlags & ITEM_FLAG_EXHAUSTIBLE )	
 					{
@@ -360,7 +360,7 @@ void CHudHistoryResource::Paint( void )
 						itemAmmoIcon = NULL;
 						bHalfHeight = false;
 					}
-#endif
+#endif // CSTRIKE && TFC_DLL
 
 					iAmount = m_PickupHistory[i].iCount;
 				}
@@ -420,13 +420,13 @@ void CHudHistoryResource::Paint( void )
 			int ypos = tall - (m_flHistoryGap * (i + 1));
 			int xpos = wide - itemIcon->Width() - m_flIconInset;
 
-#ifndef HL2MP
+#if !defined ( HL2MP ) || defined ( TFC_DLL )
 			// Adjust for a half-height icon
 			if ( bHalfHeight )
 			{
 				ypos += itemIcon->Height() / 2;
 			}
-#endif // HL2MP
+#endif // !HL2MP && TFC_DLL
 
 			itemIcon->DrawSelf( xpos, ypos, clr );
 

@@ -31,18 +31,18 @@ WeaponData
 		"weapon"
 		{
 			"file"		"sprites/tfchud06"
-			"x"			"175"
-			"y"			"40"
-			"width"		"80"
-			"height"	"20"
+			"x"			"0"
+			"y"			"90"
+			"width"		"170"
+			"height"	"45"
 		}
 		"weapon_s"
 		{	
 			"file"		"sprites/tfchud06"
-			"x"			"175"
-			"y"			"40"
-			"width"		"80"
-			"height"	"20"
+			"x"			"0"
+			"y"			"90"
+			"width"		"170"
+			"height"	"45"
 		}
 		"crosshair"
 		{

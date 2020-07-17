@@ -55,7 +55,7 @@ private:
 	// player lists
 	vgui::SectionedListPanel *m_pPlayerListDM;	//Deathmatch Player list.
 	vgui::SectionedListPanel *m_pPlayerListR;
-	vgui::SectionedListPanel *m_pPlayerListC;
+	vgui::SectionedListPanel *m_pPlayerListB;
 
 	vgui::Label	*m_pPlayerCountLabel_DM;
 	vgui::Label *m_pScoreHeader_DM;
@@ -70,12 +70,12 @@ private:
 	vgui::Label	*m_pPingHeader_R;
 	vgui::Label	*m_pPingLabel_R;
 
-	vgui::Label	*m_pPlayerCountLabel_C;
-	vgui::Label	*m_pScoreHeader_C;
-	vgui::Label	*m_pScoreLabel_C;
-	vgui::Label	*m_pDeathsHeader_C;
-	vgui::Label	*m_pPingHeader_C;
-	vgui::Label	*m_pPingLabel_C;
+	vgui::Label	*m_pPlayerCountLabel_B;
+	vgui::Label	*m_pScoreHeader_B;
+	vgui::Label	*m_pScoreLabel_B;
+	vgui::Label	*m_pDeathsHeader_B;
+	vgui::Label	*m_pPingHeader_B;
+	vgui::Label	*m_pPingLabel_B;
 
 	// Create the vertical line so we can hide it in single column mode.
 	vgui::ImagePanel *m_pVertLine;

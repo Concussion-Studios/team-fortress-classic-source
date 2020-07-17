@@ -32,19 +32,19 @@ WeaponData
 	{
 		"weapon"
 		{
-			"file"		"sprites/320hud1"
+			"file"		"sprites/640hud1"
 			"x"			"0"
 			"y"			"180"
-			"width"		"80"
-			"height"	"20"
+			"width"		"170"
+			"height"	"45"
 		}
 		"weapon_s"
 		{	
-			"file"		"sprites/320hud1"
+			"file"		"sprites/640hud1"
 			"x"			"0"
 			"y"			"180"
-			"width"		"80"
-			"height"	"20"
+			"width"		"170"
+			"height"	"45"
 		}
 		"ammo"
 		{

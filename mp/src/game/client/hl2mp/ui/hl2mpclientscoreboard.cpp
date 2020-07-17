@@ -41,10 +41,10 @@ CHL2MPClientScoreBoardDialog::CHL2MPClientScoreBoardDialog( IViewPort *pViewPort
 	m_pScoreLabel_R = new Label( this, "R_Score", "" );
 	m_pPingLabel_R = new Label( this, "R_Latency", "" );
 
-	m_pPlayerListC = new SectionedListPanel( this, "PlayerListC" );
-	m_pPlayerCountLabel_C = new Label( this, "C_PlayerCount", "" );
-	m_pScoreLabel_C = new Label( this, "C_Score", "" );
-	m_pPingLabel_C = new Label( this, "C_Latency", "" );
+	m_pPlayerListB = new SectionedListPanel( this, "PlayerListB" );
+	m_pPlayerCountLabel_B = new Label( this, "B_PlayerCount", "" );
+	m_pScoreLabel_B = new Label( this, "B_Score", "" );
+	m_pPingLabel_B = new Label( this, "B_Latency", "" );
 
 	m_pVertLine = new ImagePanel( this, "VerticalLine" );
 
@@ -113,12 +113,12 @@ void CHL2MPClientScoreBoardDialog::ApplySchemeSettings( vgui::IScheme *pScheme )
 		m_pPlayerListR->SetVisible( false );
 	}
 
-	if ( m_pPlayerListC )
+	if ( m_pPlayerListB )
 	{
-		m_pPlayerListC->SetImageList( m_pImageList, false );
-		m_pPlayerListC->SetBgColor( Color( 0, 0, 0, 0 ) );
-		m_pPlayerListC->SetBorder( NULL );
-		m_pPlayerListC->SetVisible( false );
+		m_pPlayerListB->SetImageList( m_pImageList, false );
+		m_pPlayerListB->SetBgColor( Color( 0, 0, 0, 0 ) );
+		m_pPlayerListB->SetBorder( NULL );
+		m_pPlayerListB->SetVisible( false );
 	}
 
 	// turn off the default player list since we have our own
@@ -152,18 +152,18 @@ void CHL2MPClientScoreBoardDialog::ApplySchemeSettings( vgui::IScheme *pScheme )
 		m_pPingLabel_R->SetFgColor( COLOR_RED );
 	}
 
-	m_pScoreHeader_C = (Label*)FindChildByName( "C_ScoreHeader" );
-	m_pDeathsHeader_C = (Label*)FindChildByName( "C_DeathsHeader" );
-	m_pPingHeader_C = (Label*)FindChildByName( "C_PingHeader" );
+	m_pScoreHeader_B = (Label*)FindChildByName( "B_ScoreHeader" );
+	m_pDeathsHeader_B = (Label*)FindChildByName( "B_DeathsHeader" );
+	m_pPingHeader_B = (Label*)FindChildByName( "B_PingHeader" );
 
-	if ( m_pPlayerCountLabel_C && m_pScoreHeader_C && m_pScoreLabel_C && m_pDeathsHeader_C && m_pPingHeader_C && m_pPingLabel_C )
+	if ( m_pPlayerCountLabel_B && m_pScoreHeader_B && m_pScoreLabel_B && m_pDeathsHeader_B && m_pPingHeader_B && m_pPingLabel_B )
 	{
-		m_pPlayerCountLabel_C->SetFgColor( COLOR_BLUE );
-		m_pScoreHeader_C->SetFgColor( COLOR_BLUE );
-		m_pScoreLabel_C->SetFgColor( COLOR_BLUE );
-		m_pDeathsHeader_C->SetFgColor( COLOR_BLUE );
-		m_pPingHeader_C->SetFgColor( COLOR_BLUE );
-		m_pPingLabel_C->SetFgColor( COLOR_BLUE );
+		m_pPlayerCountLabel_B->SetFgColor( COLOR_BLUE );
+		m_pScoreHeader_B->SetFgColor( COLOR_BLUE );
+		m_pScoreLabel_B->SetFgColor( COLOR_BLUE );
+		m_pDeathsHeader_B->SetFgColor( COLOR_BLUE );
+		m_pPingHeader_B->SetFgColor( COLOR_BLUE );
+		m_pPingLabel_B->SetFgColor( COLOR_BLUE );
 	}
 
 	// Store the scoreboard width, for Update();
@@ -180,7 +180,7 @@ void CHL2MPClientScoreBoardDialog::Reset()
 {
 	InitPlayerList( m_pPlayerListDM, TEAM_UNASSIGNED );
 	InitPlayerList( m_pPlayerListR, TEAM_REBELS );
-	InitPlayerList( m_pPlayerListC, TEAM_COMBINE );
+	InitPlayerList( m_pPlayerListB, TEAM_COMBINE );
 }
 
 //-----------------------------------------------------------------------------
@@ -291,19 +291,19 @@ void CHL2MPClientScoreBoardDialog::UpdateTeamInfo()
 			switch ( teamIndex ) 
 			{
 				case TEAM_REBELS:
-					teamName = g_pVGuiLocalize->Find( "#HL2MP_ScoreBoard_Rebels" );
+					teamName = g_pVGuiLocalize->Find( "#Scoreboard_Red" );
 					pDialogVarTeamScore = "r_teamscore";
 					pDialogVarTeamPlayerCount = "r_teamplayercount";
 					pDialogVarTeamPing = "r_teamping";
 					break;
 				case TEAM_COMBINE:
-					teamName = g_pVGuiLocalize->Find( "#HL2MP_ScoreBoard_Combine" );
-					pDialogVarTeamScore = "c_teamscore";
-					pDialogVarTeamPlayerCount = "c_teamplayercount";
-					pDialogVarTeamPing = "c_teamping";
+					teamName = g_pVGuiLocalize->Find( "#Scoreboard_Blue" );
+					pDialogVarTeamScore = "b_teamscore";
+					pDialogVarTeamPlayerCount = "b_teamplayercount";
+					pDialogVarTeamPing = "b_teamping";
 					break;
 				case TEAM_UNASSIGNED:
-					teamName = g_pVGuiLocalize->Find( "#HL2MP_ScoreBoard_DM" );
+					teamName = g_pVGuiLocalize->Find( "#ScoreBoard_Deathmatch" );
 					pDialogVarTeamPlayerCount = "dm_playercount";
 					pDialogVarTeamPing = "dm_ping";
 					break;
@@ -374,7 +374,7 @@ void CHL2MPClientScoreBoardDialog::UpdatePlayerList()
 {
 	m_pPlayerListDM->RemoveAll();
 	m_pPlayerListR->RemoveAll();
-	m_pPlayerListC->RemoveAll();
+	m_pPlayerListB->RemoveAll();
 
 	C_HL2MP_Player *pLocalPlayer = C_HL2MP_Player::GetLocalHL2MPPlayer();
 	if ( !pLocalPlayer )
@@ -397,7 +397,7 @@ void CHL2MPClientScoreBoardDialog::UpdatePlayerList()
 					pPlayerList = m_pPlayerListR;
 					break;
 				case TEAM_COMBINE:
-					pPlayerList = m_pPlayerListC;
+					pPlayerList = m_pPlayerListB;
 					break;
 				}
 			}
@@ -547,7 +547,7 @@ void CHL2MPClientScoreBoardDialog::UpdateItemVisibiity()
 	// Need to do this in Update, ensure the correct player lists/headers are visible.
 	if ( HL2MPRules()->IsTeamplay() )
 	{
-		// Rebel Labels _ON_
+		// Red Labels _ON_
 		m_pPlayerListR->SetVisible( true );
 		m_pPlayerCountLabel_R->SetVisible( true );
 		m_pScoreHeader_R->SetVisible( true );
@@ -556,14 +556,14 @@ void CHL2MPClientScoreBoardDialog::UpdateItemVisibiity()
 		m_pPingHeader_R->SetVisible( true );
 		m_pPingLabel_R->SetVisible( true );
 
-		// Combine Labels _ON_
-		m_pPlayerListC->SetVisible( true );
-		m_pPlayerCountLabel_C->SetVisible( true );
-		m_pScoreHeader_C->SetVisible( true );
-		m_pScoreLabel_C->SetVisible( true );
-		m_pDeathsHeader_C->SetVisible( true );
-		m_pPingHeader_C->SetVisible( true );
-		m_pPingLabel_C->SetVisible( true );
+		// Blue Labels _ON_
+		m_pPlayerListB->SetVisible( true );
+		m_pPlayerCountLabel_B->SetVisible( true );
+		m_pScoreHeader_B->SetVisible( true );
+		m_pScoreLabel_B->SetVisible( true );
+		m_pDeathsHeader_B->SetVisible( true );
+		m_pPingHeader_B->SetVisible( true );
+		m_pPingLabel_B->SetVisible( true );
 
 		// Vertical Line _ON_
 		m_pVertLine->SetVisible( true );
@@ -581,7 +581,7 @@ void CHL2MPClientScoreBoardDialog::UpdateItemVisibiity()
 	}
 	else
 	{
-		// Rebel Labels _OFF_
+		// Red Labels _OFF_
 		m_pPlayerListR->SetVisible( false );
 		m_pPlayerCountLabel_R->SetVisible( false );
 		m_pScoreHeader_R->SetVisible( false );
@@ -590,14 +590,14 @@ void CHL2MPClientScoreBoardDialog::UpdateItemVisibiity()
 		m_pPingHeader_R->SetVisible( false );
 		m_pPingLabel_R->SetVisible( false );
 
-		// Combine Labels _OFF_
-		m_pPlayerListC->SetVisible( false );
-		m_pPlayerCountLabel_C->SetVisible( false );
-		m_pScoreHeader_C->SetVisible( false );
-		m_pScoreLabel_C->SetVisible( false );
-		m_pDeathsHeader_C->SetVisible( false );
-		m_pPingHeader_C->SetVisible( false );
-		m_pPingLabel_C->SetVisible( false );
+		// Blue Labels _OFF_
+		m_pPlayerListB->SetVisible( false );
+		m_pPlayerCountLabel_B->SetVisible( false );
+		m_pScoreHeader_B->SetVisible( false );
+		m_pScoreLabel_B->SetVisible( false );
+		m_pDeathsHeader_B->SetVisible( false );
+		m_pPingHeader_B->SetVisible( false );
+		m_pPingLabel_B->SetVisible( false );
 
 		// Vertical Line _OFF_
 		m_pVertLine->SetVisible( false );

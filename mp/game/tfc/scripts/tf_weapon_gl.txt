@@ -10,8 +10,8 @@ WeaponData
 	"bucket"			"4"
 	"bucket_position"	"1"
 
-	"clip_size"			"1"
-	"default_clip"		"5"
+	"clip_size"			"-1"
+	"default_clip"		"100"
 
 	"primary_ammo"		"AMMO_ROCKETS"
 	"secondary_ammo"	"None"
@@ -31,19 +31,19 @@ WeaponData
 	{
 		"weapon"
 		{
-			"file"		"sprites/tfchud02"
-			"x"			"175"
-			"y"			"60"
-			"width"		"80"
-			"height"	"20"
+			"file"		"sprites/tfchud01"
+			"x"			"0"
+			"y"			"135"
+			"width"		"170"
+			"height"	"45"
 		}
 		"weapon_s"
 		{	
 			"file"		"sprites/tfchud02"
-			"x"			"175"
-			"y"			"160"
-			"width"		"80"
-			"height"	"20"
+			"x"			"0"
+			"y"			"135"
+			"width"		"170"
+			"height"	"45"
 		}
 		"ammo"
 		{

@@ -75,33 +75,6 @@ END_SEND_TABLE()
 CTFCGameRules::CTFCGameRules()
 {
 #ifndef CLIENT_DLL
-    // Remove old HL2MP teams.
-    // This proobabbllyy isn't the best way of doing this...
-    CTeam* pTeam;
-    int i;
-
-    for ( i = 0; i < g_Teams.Size(); i++ )
-    {
-        pTeam = g_Teams.Element( i );
-
-        if ( pTeam )
-        {
-            DevMsg( "Removing old team: %s\n", pTeam->GetName() );
-            UTIL_Remove( pTeam );
-        }
-
-        g_Teams.Remove( i );
-        --i;
-    }
-
-	// Create the team list.
-    for ( int iTeam = 0; iTeam < TEAM_COUNT; ++iTeam )
-    {
-        CTeam* pNewTeam = static_cast<CTeam*>( CreateEntityByName( "team_manager" ) );
-        pNewTeam->Init( g_aTeamNames[i], i );
-		DevMsg( "Creating New team: %s\n", pNewTeam->GetName() );
-        g_Teams.AddToTail( pNewTeam );
-    }
 #endif
 }
 

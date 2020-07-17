@@ -35,6 +35,7 @@ int ITEM_GiveAmmo( CBasePlayer *pPlayer, float flCount, const char *pszAmmoName,
 	return pPlayer->GiveAmmo( flCount, iAmmoType, bSuppressSound );
 }
 
+#ifndef TFC_DLL
 // ========================================================================
 //	>> BoxSRounds
 // ========================================================================
@@ -981,4 +982,4 @@ void CItem_AmmoCrate::InputKill( inputdata_t &data )
 {
 	UTIL_Remove( this );
 }
-
+#endif // TFC_DLL
