@@ -24,13 +24,10 @@ public:
 	DECLARE_CLASS( CTFCKnife, CTFCCrowbar );
 	DECLARE_NETWORKCLASS(); 
 	DECLARE_PREDICTABLE();	
-#ifndef CLIENT_DLL
-	DECLARE_DATADESC();
-#endif
 	
 	CTFCKnife();
 
-	virtual void Smack() OVERRIDE;
+	virtual void ImpactEffect( trace_t &traceHit ) OVERRIDE;
 	virtual TFCWeaponID GetWeaponID( void ) const { return TF_WEAPON_KNIFE; }
 
 private:

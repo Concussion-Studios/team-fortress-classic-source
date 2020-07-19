@@ -14,22 +14,17 @@
 #include "hud.h"
 #include "hud_macros.h"
 #include "view.h"
-
-#include "iclientmode.h"
-
 #include <KeyValues.h>
-#include <vgui/ISurface.h>
-#include <vgui/ISystem.h>
-#include <vgui_controls/AnimationController.h>
-
-#include <vgui/ILocalize.h>
-
-using namespace vgui;
-
+#include "iclientmode.h"
 #include "hudelement.h"
 #include "hud_numericdisplay.h"
-
 #include "convar.h"
+#include <vgui/ISurface.h>
+#include <vgui/ISystem.h>
+#include <vgui/ILocalize.h>
+#include <vgui_controls/AnimationController.h>
+
+using namespace vgui;
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -51,11 +46,20 @@ public:
 	virtual void OnThink();
 			void MsgFunc_Damage( bf_read &msg );
 
+	virtual void Paint( void );
+	virtual void PaintBackground( void );
+	virtual void ApplySchemeSettings( IScheme *scheme );
+
 private:
 	// old variables
 	int		m_iHealth;
-	
 	int		m_bitsDamage;
+	CHudTexture *m_pHealthIcon;	
+
+	CPanelAnimationVarAliasType( float, icon_xpos, "icon_xpos", "0", "proportional_float" );
+	CPanelAnimationVarAliasType( float, icon_ypos, "icon_ypos", "2", "proportional_float" );
+	CPanelAnimationVarAliasType( float, icon_tall, "icon_tall", "64", "proportional_float" );
+	CPanelAnimationVarAliasType( float, icon_wide, "icon_wide", "64", "proportional_float" );
 };	
 
 DECLARE_HUDELEMENT( CHudHealth );
@@ -67,6 +71,8 @@ DECLARE_HUD_MESSAGE( CHudHealth, Damage );
 CHudHealth::CHudHealth( const char *pElementName ) : CHudElement( pElementName ), CHudNumericDisplay(NULL, "HudHealth")
 {
 	SetHiddenBits( HIDEHUD_HEALTH | HIDEHUD_PLAYERDEAD | HIDEHUD_NEEDSUIT );
+
+	SetPaintBackgroundType( 0 );
 }
 
 //-----------------------------------------------------------------------------
@@ -86,16 +92,6 @@ void CHudHealth::Reset()
 	m_iHealth		= INIT_HEALTH;
 	m_bitsDamage	= 0;
 
-	wchar_t *tempString = g_pVGuiLocalize->Find("#Valve_Hud_HEALTH");
-
-	if (tempString)
-	{
-		SetLabelText(tempString);
-	}
-	else
-	{
-		SetLabelText(L"HEALTH");
-	}
 	SetDisplayValue(m_iHealth);
 }
 
@@ -105,6 +101,50 @@ void CHudHealth::Reset()
 void CHudHealth::VidInit()
 {
 	Reset();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CHudHealth::ApplySchemeSettings( IScheme *scheme )
+{
+	BaseClass::ApplySchemeSettings( scheme );
+
+	if( !m_pHealthIcon )
+		m_pHealthIcon = gHUD.GetIcon( "health_icon" );
+
+	if( m_pHealthIcon )
+	{
+
+		icon_tall = GetTall() - YRES(2);
+		float scale = icon_tall / (float)m_pHealthIcon->Height();
+		icon_wide = ( scale ) * (float)m_pHealthIcon->Width();
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CHudHealth::Paint( void )
+{
+	if( m_pHealthIcon )
+		m_pHealthIcon->DrawSelf( icon_xpos, icon_ypos, icon_wide, icon_tall, GetFgColor() );
+
+	//draw the health icon
+	BaseClass::Paint();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CHudHealth::PaintBackground()
+{ 
+	int wide, tall;
+	GetSize( wide, tall );
+
+	//Color col = GetBgColor();
+
+	DrawBoxFade( 0, 0, wide, tall, Color( 0, 0, 0, 200 ), 1.0f, 255, 0, true );
 }
 
 //-----------------------------------------------------------------------------

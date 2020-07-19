@@ -27,14 +27,14 @@ public:
 
 	CTFCCrowbar();
 
-	virtual TFCWeaponID GetWeaponID( void ) const { return TF_WEAPON_CROWBAR; }
+	virtual TFCWeaponID GetWeaponID( void ) const OVERRIDE { return TF_WEAPON_CROWBAR; }
 
-// Overrideables.
-public:
-#ifdef GAME_DLL
-	// This is called first to determine if the axe should apply damage to the entity.
-	virtual void AxeHit( CBaseEntity *pHit, bool bFirstSwing, trace_t &tr, float *flDamage, bool *bDoEffects ) OVERRIDE;
-#endif
+	void SecondaryAttack( void ) OVERRIDE { return; }
+
+	virtual float GetRange( void ) OVERRIDE { return 75.0f; }
+	virtual float GetFireRate( void ) OVERRIDE { return 0.4f; }
+	virtual void AddViewKick( void ) OVERRIDE;
+	virtual float GetDamageForActivity( Activity hitActivity ) OVERRIDE { return 25.0f; };
 
 private:
 	CTFCCrowbar( const CTFCCrowbar & ) {}

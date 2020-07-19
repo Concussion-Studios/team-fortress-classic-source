@@ -111,29 +111,29 @@ END_DATADESC()
 
 const char *g_ppszRandomCitizenModels[] = 
 {
-	"models/player/humans/group03/male_01.mdl",
-	"models/player/humans/group03/male_02.mdl",
-	"models/player/humans/group03/female_01.mdl",
-	"models/player/humans/group03/male_03.mdl",
-	"models/player/humans/group03/female_02.mdl",
-	"models/player/humans/group03/male_04.mdl",
-	"models/player/humans/group03/female_03.mdl",
-	"models/player/humans/group03/male_05.mdl",
-	"models/player/humans/group03/female_04.mdl",
-	"models/player/humans/group03/male_06.mdl",
-	"models/player/humans/group03/female_06.mdl",
-	"models/player/humans/group03/male_07.mdl",
-	"models/player/humans/group03/female_07.mdl",
-	"models/player/humans/group03/male_08.mdl",
-	"models/player/humans/group03/male_09.mdl",
+	"models/humans/group03/male_01.mdl",
+	"models/humans/group03/male_02.mdl",
+	"models/humans/group03/female_01.mdl",
+	"models/humans/group03/male_03.mdl",
+	"models/humans/group03/female_02.mdl",
+	"models/humans/group03/male_04.mdl",
+	"models/humans/group03/female_03.mdl",
+	"models/humans/group03/male_05.mdl",
+	"models/humans/group03/female_04.mdl",
+	"models/humans/group03/male_06.mdl",
+	"models/humans/group03/female_06.mdl",
+	"models/humans/group03/male_07.mdl",
+	"models/humans/group03/female_07.mdl",
+	"models/humans/group03/male_08.mdl",
+	"models/humans/group03/male_09.mdl",
 };
 
 const char *g_ppszRandomCombineModels[] =
 {
-	"models/player/combine_soldier.mdl",
-	"models/player/combine_soldier_prisonguard.mdl",
-	"models/player/combine_super_soldier.mdl",
-	"models/player/police.mdl",
+	"models/combine_soldier.mdl",
+	"models/combine_soldier_prisonguard.mdl",
+	"models/combine_super_soldier.mdl",
+	"models/police.mdl",
 };
 
 #define MODEL_CHANGE_INTERVAL 5.0f
@@ -245,7 +245,7 @@ void CHL2MP_Player::PickDefaultSpawnTeam( void )
 				{
 					char szReturnString[512];
 
-					Q_snprintf( szReturnString, sizeof (szReturnString ), "cl_playermodel models/player/combine_soldier.mdl\n" );
+					Q_snprintf( szReturnString, sizeof (szReturnString ), "cl_playermodel models/combine_soldier.mdl\n" );
 					engine->ClientCommand ( edict(), szReturnString );
 				}
 
@@ -377,7 +377,7 @@ void CHL2MP_Player::SetPlayerTeamModel( void )
 
 	if ( modelIndex == -1 || ValidatePlayerModel( szModelName ) == false )
 	{
-		szModelName = "models/player/Combine_Soldier.mdl";
+		szModelName = "models/Combine_Soldier.mdl";
 		m_iModelType = TEAM_COMBINE;
 
 		char szReturnString[512];
@@ -388,7 +388,7 @@ void CHL2MP_Player::SetPlayerTeamModel( void )
 
 	if ( GetTeamNumber() == TEAM_COMBINE )
 	{
-		if ( Q_stristr( szModelName, "models/player/human") )
+		if ( Q_stristr( szModelName, "models/human") )
 		{
 			int nHeads = ARRAYSIZE( g_ppszRandomCombineModels );
 		
@@ -400,7 +400,7 @@ void CHL2MP_Player::SetPlayerTeamModel( void )
 	}
 	else if ( GetTeamNumber() == TEAM_REBELS )
 	{
-		if ( !Q_stristr( szModelName, "models/player/human") )
+		if ( !Q_stristr( szModelName, "models/human") )
 		{
 			int nHeads = ARRAYSIZE( g_ppszRandomCitizenModels );
 
@@ -423,31 +423,13 @@ void CHL2MP_Player::SetPlayerModel( void )
 
 	szModelName = engine->GetClientConVarValue( engine->IndexOfEdict( edict() ), "cl_playermodel" );
 
-	//Andrew; Map our requested player model to the new model/player path.
-	char file[_MAX_PATH];
-	Q_strncpy( file, szModelName, sizeof(file) );
-	if ( Q_strnicmp( file, "models/player/", 14 ) )
-	{
-		char *substring = strstr( file, "models/" );
-		if ( substring )
-		{
-			// replace with new directory
-			const char *dirname = substring + strlen("models/");
-			*substring = 0;
-			char destpath[_MAX_PATH];
-			// player
-			Q_snprintf( destpath, sizeof(destpath), "models/player/%s", dirname);
-			szModelName = destpath;
-		}
-	}
-
 	if ( ValidatePlayerModel( szModelName ) == false )
 	{
 		char szReturnString[512];
 
 		if ( ValidatePlayerModel( pszCurrentModelName ) == false )
 		{
-			pszCurrentModelName = "models/player/Combine_Soldier.mdl";
+			pszCurrentModelName = "models/Combine_Soldier.mdl";
 		}
 
 		Q_snprintf( szReturnString, sizeof (szReturnString ), "cl_playermodel %s\n", pszCurrentModelName );
@@ -481,7 +463,7 @@ void CHL2MP_Player::SetPlayerModel( void )
 			szModelName = g_ppszRandomCitizenModels[0];
 		}
 
-		if ( Q_stristr( szModelName, "models/player/human") )
+		if ( Q_stristr( szModelName, "models/human") )
 		{
 			m_iModelType = TEAM_REBELS;
 		}
@@ -495,7 +477,7 @@ void CHL2MP_Player::SetPlayerModel( void )
 
 	if ( modelIndex == -1 )
 	{
-		szModelName = "models/player/Combine_Soldier.mdl";
+		szModelName = "models/Combine_Soldier.mdl";
 		m_iModelType = TEAM_COMBINE;
 
 		char szReturnString[512];

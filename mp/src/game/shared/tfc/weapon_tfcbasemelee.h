@@ -25,35 +25,32 @@ public:
 	DECLARE_CLASS( CWeaponTFCBaseMelee, CWeaponTFCBase );
 	DECLARE_NETWORKCLASS(); 
 	DECLARE_PREDICTABLE();
-#ifndef CLIENT_DLL
-	DECLARE_DATADESC();
-#endif
 
 	CWeaponTFCBaseMelee();
 
-	virtual void Spawn() OVERRIDE;
-	virtual void PrimaryAttack() OVERRIDE;
-	virtual void WeaponIdle() OVERRIDE;
-	virtual void ItemPostFrame() OVERRIDE;
-	virtual bool Holster( CBaseCombatWeapon *pSwitchingTo = NULL ) OVERRIDE;
-	virtual bool HasPrimaryAmmo() OVERRIDE { return true; }
-	virtual bool CanBeSelected() OVERRIDE { return true; }
-	virtual void Smack();
-
-	// Get specific TFC weapon ID (ie: WEAPON_AK47, etc)
+	// Get specific TFC weapon ID (ie: WEAPON_AC, etc)
 	virtual TFCWeaponID GetWeaponID( void ) const {	Assert( false ); return TF_WEAPON_NONE; }
+	
+	//Attack functions
+	virtual	void	PrimaryAttack( void ) OVERRIDE;
+	virtual	void	SecondaryAttack( void ) OVERRIDE;
+	
+	virtual void	ItemPostFrame( void ) OVERRIDE;
 
-// Overrideables.
-public:
-#ifdef GAME_DLL
-	// This is called first to determine if the axe should apply damage to the entity.
-	virtual void AxeHit( CBaseEntity *pHit, bool bFirstSwing, trace_t &tr, float *flDamage, bool *bDoEffects ) { Assert(!"Derivate classes must implement this!."); }
-#endif
+	//Functions to select animation sequences 
+	virtual Activity	GetPrimaryAttackActivity( void ) OVERRIDE { return ACT_VM_HITCENTER; }
+	virtual Activity	GetSecondaryAttackActivity( void ) OVERRIDE { return ACT_VM_HITCENTER2; }
 
-public:
-	trace_t m_trHit;
-	EHANDLE m_pTraceHitEnt;
-	float m_flStoredPrimaryAttack;
+	virtual	float	GetFireRate( void )	OVERRIDE { return 0.2f; }
+	virtual float	GetRange( void ) { return 32.0f; }
+	virtual	float	GetDamageForActivity( Activity hitActivity ) { return 1.0f; }
+
+	virtual	void	ImpactEffect( trace_t &trace );
+
+	virtual	bool ImpactWater( const Vector &start, const Vector &end );
+	virtual	void Swing( int bIsSecondary );
+	virtual	void Hit( trace_t &traceHit, Activity nHitActivity );
+	virtual	Activity ChooseIntersectionPointAndActivity( trace_t &hitTrace, const Vector &mins, const Vector &maxs, CBasePlayer *pOwner );
 
 private:
 	CWeaponTFCBaseMelee( const CWeaponTFCBaseMelee & ) {}

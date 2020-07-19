@@ -755,24 +755,6 @@ void CHL2MPRules::ClientSettingsChanged( CBasePlayer *pPlayer )
 	const char *pCurrentModel = modelinfo->GetModelName( pPlayer->GetModel() );
 	const char *szModelName = engine->GetClientConVarValue( engine->IndexOfEdict( pPlayer->edict() ), "cl_playermodel" );
 
-	//Andrew; Map our requested player model to the new model/player path.
-	char file[_MAX_PATH];
-	Q_strncpy( file, szModelName, sizeof(file) );
-	if ( Q_strnicmp( file, "models/player/", 14 ) )
-	{
-		char *substring = strstr( file, "models/" );
-		if ( substring )
-		{
-			// replace with new directory
-			const char *dirname = substring + strlen("models/");
-			*substring = 0;
-			char destpath[_MAX_PATH];
-			// player
-			Q_snprintf( destpath, sizeof(destpath), "models/player/%s", dirname);
-			szModelName = destpath;
-		}
-	}
-
 	//If we're different.
 	if ( stricmp( szModelName, pCurrentModel ) )
 	{
@@ -804,7 +786,7 @@ void CHL2MPRules::ClientSettingsChanged( CBasePlayer *pPlayer )
 		}
 		else
 		{
-			if ( Q_stristr( szModelName, "models/player/human") )
+			if ( Q_stristr( szModelName, "models/human") )
 			{
 				pHL2Player->ChangeTeam( TEAM_REBELS );
 			}

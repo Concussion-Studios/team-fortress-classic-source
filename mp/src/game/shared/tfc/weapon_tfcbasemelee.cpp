@@ -5,264 +5,348 @@
 //=============================================================================//
 #include "cbase.h"
 #include "weapon_tfcbasemelee.h"
-#include "decals.h"
+#include "mathlib/mathlib.h"
+#include "in_buttons.h"
+#include "animation.h"
 
 #if defined( CLIENT_DLL )
 	#include "c_hl2mp_player.h"
 #else
 	#include "hl2mp_player.h"
+	#include "ndebugoverlay.h"
+	#include "te_effect_dispatch.h"
 	#include "ilagcompensationmanager.h"
-	#include "util.h"
 #endif
 
-static Vector head_hull_mins(-16, -16, -18);
-static Vector head_hull_maxs(16, 16, 18);
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
-// ----------------------------------------------------------------------------- //
-// CWeaponTFCBaseMelee tables.
-// ----------------------------------------------------------------------------- //
 IMPLEMENT_NETWORKCLASS_ALIASED( WeaponTFCBaseMelee, DT_WeaponTFCBaseMelee )
-
-BEGIN_NETWORK_TABLE_NOBASE( CWeaponTFCBaseMelee, DT_LocalActiveWeaponBaseMeleeData )
-END_NETWORK_TABLE()
 
 BEGIN_NETWORK_TABLE( CWeaponTFCBaseMelee, DT_WeaponTFCBaseMelee )
 END_NETWORK_TABLE()
 
-#ifdef CLIENT_DLL
 BEGIN_PREDICTION_DATA( CWeaponTFCBaseMelee )
 END_PREDICTION_DATA()
-#endif
 
-#ifndef CLIENT_DLL
-BEGIN_DATADESC( CWeaponTFCBaseMelee )
-	DEFINE_FUNCTION( Smack )
-END_DATADESC()
-#endif
+#define MELEE_HULL_DIM		16
 
-// ----------------------------------------------------------------------------- //
-// CWeaponTFCBaseMelee implementation.
-// ----------------------------------------------------------------------------- //
+static const Vector g_meleeMins( -MELEE_HULL_DIM,-MELEE_HULL_DIM,-MELEE_HULL_DIM );
+static const Vector g_meleeMaxs( MELEE_HULL_DIM,MELEE_HULL_DIM,MELEE_HULL_DIM );
+
+//-----------------------------------------------------------------------------
+// Constructor
+//-----------------------------------------------------------------------------
 CWeaponTFCBaseMelee::CWeaponTFCBaseMelee()
 {
+	m_fMinRange1	= 0;
+	m_fMinRange2	= 0;
+	m_fMaxRange1	= 64;
+	m_fMaxRange2	= 64;
+	m_bFiresUnderwater = true;
 }
 
-void FindHullIntersection( const Vector &vecSrc, trace_t &tr, const Vector &mins, const Vector &maxs, CBaseEntity *pEntity )
+//------------------------------------------------------------------------------
+// Purpose : Update weapon
+//------------------------------------------------------------------------------
+void CWeaponTFCBaseMelee::ItemPostFrame( void )
+{
+	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	
+	if ( pOwner == NULL )
+		return;
+
+	if ( ( pOwner->m_nButtons & IN_ATTACK ) && ( m_flNextPrimaryAttack <= gpGlobals->curtime ) )
+	{
+		PrimaryAttack();
+	} 
+	else if ( ( pOwner->m_nButtons & IN_ATTACK2 ) && ( m_flNextSecondaryAttack <= gpGlobals->curtime ) )
+	{
+		SecondaryAttack();
+	}
+	else 
+	{
+		WeaponIdle();
+		return;
+	}
+}
+
+//------------------------------------------------------------------------------
+// Purpose :
+// Input   :
+// Output  :
+//------------------------------------------------------------------------------
+void CWeaponTFCBaseMelee::PrimaryAttack()
+{
+#ifndef CLIENT_DLL
+	CHL2MP_Player *pPlayer = ToHL2MPPlayer( GetPlayerOwner() );
+	// Move other players back to history positions based on local player's lag
+	lagcompensation->StartLagCompensation( pPlayer, pPlayer->GetCurrentCommand() );
+#endif
+
+	Swing( false );
+
+#ifndef CLIENT_DLL
+	// Move other players back to history positions based on local player's lag
+	lagcompensation->FinishLagCompensation( pPlayer );
+#endif
+
+}
+
+//------------------------------------------------------------------------------
+// Purpose :
+// Input   :
+// Output  :
+//------------------------------------------------------------------------------
+void CWeaponTFCBaseMelee::SecondaryAttack()
+{
+#ifndef CLIENT_DLL
+	CHL2MP_Player *pPlayer = ToHL2MPPlayer( GetPlayerOwner() );
+	// Move other players back to history positions based on local player's lag
+	lagcompensation->StartLagCompensation( pPlayer, pPlayer->GetCurrentCommand() );
+#endif
+
+	Swing( true );
+
+#ifndef CLIENT_DLL
+	// Move other players back to history positions based on local player's lag
+	lagcompensation->FinishLagCompensation( pPlayer );
+#endif
+}
+
+
+//------------------------------------------------------------------------------
+// Purpose: Implement impact function
+//------------------------------------------------------------------------------
+void CWeaponTFCBaseMelee::Hit( trace_t &traceHit, Activity nHitActivity )
+{
+	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
+	
+	//Do view kick
+	AddViewKick();
+
+	CBaseEntity	*pHitEntity = traceHit.m_pEnt;
+
+	//Apply damage to a hit target
+	if ( pHitEntity != NULL )
+	{
+		Vector hitDirection;
+		pPlayer->EyeVectors( &hitDirection, NULL, NULL );
+		VectorNormalize( hitDirection );
+
+#ifndef CLIENT_DLL
+		CTakeDamageInfo info( GetOwner(), GetOwner(), GetDamageForActivity( nHitActivity ), DMG_CLUB );
+
+		if( pPlayer && pHitEntity->IsNPC() )
+		{
+			// If bonking an NPC, adjust damage.
+			info.AdjustPlayerDamageInflictedForSkillLevel();
+		}
+
+		CalculateMeleeDamageForce( &info, hitDirection, traceHit.endpos );
+
+		pHitEntity->DispatchTraceAttack( info, hitDirection, &traceHit ); 
+		ApplyMultiDamage();
+
+		// Now hit all triggers along the ray that... 
+		TraceAttackToTriggers( info, traceHit.startpos, traceHit.endpos, hitDirection );
+#endif
+		WeaponSound( MELEE_HIT );
+	}
+
+	// Apply an impact effect
+	ImpactEffect( traceHit );
+}
+
+Activity CWeaponTFCBaseMelee::ChooseIntersectionPointAndActivity( trace_t &hitTrace, const Vector &mins, const Vector &maxs, CBasePlayer *pOwner )
 {
 	int			i, j, k;
 	float		distance;
-	Vector minmaxs[2] = {mins, maxs};
-	trace_t tmpTrace;
-	Vector		vecHullEnd = tr.endpos;
+	const float	*minmaxs[2] = {mins.Base(), maxs.Base()};
+	trace_t		tmpTrace;
+	Vector		vecHullEnd = hitTrace.endpos;
 	Vector		vecEnd;
 
 	distance = 1e6f;
+	Vector vecSrc = hitTrace.startpos;
 
 	vecHullEnd = vecSrc + ((vecHullEnd - vecSrc)*2);
-	UTIL_TraceLine( vecSrc, vecHullEnd, MASK_SOLID, pEntity, COLLISION_GROUP_NONE, &tmpTrace );
-	if ( tmpTrace.fraction < 1.0 )
+	UTIL_TraceLine( vecSrc, vecHullEnd, MASK_SHOT_HULL, pOwner, COLLISION_GROUP_NONE, &tmpTrace );
+	if ( tmpTrace.fraction == 1.0 )
 	{
-		tr = tmpTrace;
-		return;
-	}
-
-	for ( i = 0; i < 2; i++ )
-	{
-		for ( j = 0; j < 2; j++ )
+		for ( i = 0; i < 2; i++ )
 		{
-			for ( k = 0; k < 2; k++ )
+			for ( j = 0; j < 2; j++ )
 			{
-				vecEnd.x = vecHullEnd.x + minmaxs[i][0];
-				vecEnd.y = vecHullEnd.y + minmaxs[j][1];
-				vecEnd.z = vecHullEnd.z + minmaxs[k][2];
-
-				UTIL_TraceLine( vecSrc, vecEnd, MASK_SOLID, pEntity, COLLISION_GROUP_NONE, &tmpTrace );
-				if ( tmpTrace.fraction < 1.0 )
+				for ( k = 0; k < 2; k++ )
 				{
-					float thisDistance = (tmpTrace.endpos - vecSrc).Length();
-					if ( thisDistance < distance )
+					vecEnd.x = vecHullEnd.x + minmaxs[i][0];
+					vecEnd.y = vecHullEnd.y + minmaxs[j][1];
+					vecEnd.z = vecHullEnd.z + minmaxs[k][2];
+
+					UTIL_TraceLine( vecSrc, vecEnd, MASK_SHOT_HULL, pOwner, COLLISION_GROUP_NONE, &tmpTrace );
+					if ( tmpTrace.fraction < 1.0 )
 					{
-						tr = tmpTrace;
-						distance = thisDistance;
+						float thisDistance = (tmpTrace.endpos - vecSrc).Length();
+						if ( thisDistance < distance )
+						{
+							hitTrace = tmpTrace;
+							distance = thisDistance;
+						}
 					}
 				}
 			}
 		}
 	}
-}
-
-
-void CWeaponTFCBaseMelee::Spawn()
-{
-	m_iClip1 = -1;
-	BaseClass::Spawn();
-}
-
-bool CWeaponTFCBaseMelee::Holster( CBaseCombatWeapon *pSwitchingTo )
-{
-	if ( GetPlayerOwner() )
-		GetPlayerOwner()->m_flNextAttack = gpGlobals->curtime + 0.5;
-
-	return BaseClass::Holster( pSwitchingTo );
-}
-
-void CWeaponTFCBaseMelee::ItemPostFrame()
-{
-	// Store this off so we can detect if it's our first swing or not later on.
-	m_flStoredPrimaryAttack = m_flNextPrimaryAttack;
-
-	BaseClass::ItemPostFrame();
-}
-
-void CWeaponTFCBaseMelee::WeaponIdle( void )
-{
-	CHL2MP_Player *pPlayer = GetPlayerOwner();
-	if ( !pPlayer )
-		return;
-
-	if ( m_flTimeWeaponIdle > gpGlobals->curtime )
-		return;
-
-	m_flTimeWeaponIdle = gpGlobals->curtime + 20;
-
-	// only idle if the slid isn't back
-	SendWeaponAnim( ACT_VM_IDLE );
-}
-
-void CWeaponTFCBaseMelee::PrimaryAttack()
-{
-	CHL2MP_Player *pPlayer = GetPlayerOwner();
-
-#if !defined (CLIENT_DLL)
-	// Move other players back to history positions based on local player's lag
-	lagcompensation->StartLagCompensation( pPlayer, pPlayer->GetCurrentCommand() );
-#endif
-
-	Vector vForward;
-	AngleVectors( pPlayer->EyeAngles(), &vForward );
-	Vector vecSrc	= pPlayer->Weapon_ShootPosition();
-	Vector vecEnd	= vecSrc + vForward * 32;
-
-	trace_t tr;
-	UTIL_TraceLine( vecSrc, vecEnd, MASK_SOLID, pPlayer, COLLISION_GROUP_NONE, &tr );
-
-	if ( tr.fraction >= 1.0 )
-	{
-		UTIL_TraceHull( vecSrc, vecEnd, head_hull_mins, head_hull_maxs, MASK_SOLID, pPlayer, COLLISION_GROUP_NONE, &tr );
-		if ( tr.fraction < 1.0 )
-		{
-			// Calculate the point of intersection of the line (or hull) and the object we hit
-			// This is and approximation of the "best" intersection
-			CBaseEntity *pHit = tr.m_pEnt;
-			if ( !pHit || pHit->IsBSPModel() )
-				FindHullIntersection( vecSrc, tr, VEC_DUCK_HULL_MIN, VEC_DUCK_HULL_MAX, pPlayer );
-			vecEnd = tr.endpos;	// This is the point on the actual surface (the hull could have hit space)
-		}
-	}
-
-	bool bDidHit = tr.fraction < 1.0f;
-
-#ifndef CLIENT_DLL
-	bool bFirstSwing = (gpGlobals->curtime - m_flStoredPrimaryAttack) >= 1;
-#endif
-
-	pPlayer->DoAnimationEvent( PLAYERANIMEVENT_ATTACK_PRIMARY );
-
-	m_flTimeWeaponIdle = gpGlobals->curtime + 2;
-	m_flNextPrimaryAttack = gpGlobals->curtime + 0.4f;
-
-	if ( bDidHit )
-	{
-		SendWeaponAnim( ACT_VM_HITCENTER );
-	}
 	else
 	{
-		// Allow for there only being hit activities.
-		if ( !SendWeaponAnim( ACT_VM_MISSCENTER ) )
-			SendWeaponAnim( ACT_VM_HITCENTER );
-
-		// play wiff or swish sound
-		WeaponSound( MELEE_MISS );
+		hitTrace = tmpTrace;
 	}
 
-	bool bPlayImpactEffect = false;
+
+	return ACT_VM_HITCENTER;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : &traceHit - 
+//-----------------------------------------------------------------------------
+bool CWeaponTFCBaseMelee::ImpactWater( const Vector &start, const Vector &end )
+{
+	//FIXME: This doesn't handle the case of trying to splash while being underwater, but that's not going to look good
+	//		 right now anyway...
 	
-#ifndef CLIENT_DLL
+	// We must start outside the water
+	if ( UTIL_PointContents( start ) & (CONTENTS_WATER|CONTENTS_SLIME))
+		return false;
 
-	if ( bDidHit )
+	// We must end inside of water
+	if ( !(UTIL_PointContents( end ) & (CONTENTS_WATER|CONTENTS_SLIME)))
+		return false;
+
+	trace_t	waterTrace;
+
+	UTIL_TraceLine( start, end, (CONTENTS_WATER|CONTENTS_SLIME), GetOwner(), COLLISION_GROUP_NONE, &waterTrace );
+
+	if ( waterTrace.fraction < 1.0f )
 	{
-		CBaseEntity *pEntity = tr.m_pEnt;
-		
-		ClearMultiDamage();
+#ifndef CLIENT_DLL
+		CEffectData	data;
 
-		float flDamage = 0;
-		bool bDoEffects = true;
-		AxeHit( pEntity, bFirstSwing, tr, &flDamage, &bDoEffects );
-		if ( flDamage != 0 )
+		data.m_fFlags  = 0;
+		data.m_vOrigin = waterTrace.endpos;
+		data.m_vNormal = waterTrace.plane.normal;
+		data.m_flScale = 8.0f;
+
+		// See if we hit slime
+		if ( waterTrace.contents & CONTENTS_SLIME )
 		{
-			CTakeDamageInfo info( pPlayer, pPlayer, flDamage, DMG_CLUB | DMG_NEVERGIB );
-
-			CalculateMeleeDamageForce( &info, vForward, tr.endpos, 1.0f/flDamage );
-			pEntity->DispatchTraceAttack( info, vForward, &tr ); 
-			ApplyMultiDamage();
+			data.m_fFlags |= FX_WATER_IN_SLIME;
 		}
 
-		if ( bDoEffects )
-		{
-			if ( pEntity && pEntity->IsPlayer() )
-			{
-				WeaponSound( MELEE_HIT );
+		DispatchEffect( "watersplash", data );			
+#endif
+	}
 
-				if ( pEntity->IsAlive() )
-					bPlayImpactEffect = true; // no blood effect on dead bodies
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CWeaponTFCBaseMelee::ImpactEffect( trace_t &traceHit )
+{
+	// See if we hit water (we don't do the other impact effects in this case)
+	if ( ImpactWater( traceHit.startpos, traceHit.endpos ) )
+		return;
+
+	//FIXME: need new decals
+	UTIL_ImpactTrace( &traceHit, DMG_CLUB );
+}
+
+
+//------------------------------------------------------------------------------
+// Purpose : Starts the swing of the weapon and determines the animation
+// Input   : bIsSecondary - is this a secondary attack?
+//------------------------------------------------------------------------------
+void CWeaponTFCBaseMelee::Swing( int bIsSecondary )
+{
+	trace_t traceHit;
+
+	// Try a ray
+	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	if ( !pOwner )
+		return;
+
+	Vector swingStart = pOwner->Weapon_ShootPosition( );
+	Vector forward;
+
+	pOwner->EyeVectors( &forward, NULL, NULL );
+
+	Vector swingEnd = swingStart + forward * GetRange();
+	UTIL_TraceLine( swingStart, swingEnd, MASK_SHOT_HULL, pOwner, COLLISION_GROUP_NONE, &traceHit );
+	Activity nHitActivity = ACT_VM_HITCENTER;
+
+#ifndef CLIENT_DLL
+	// Like bullets, melee traces have to trace against triggers.
+	CTakeDamageInfo triggerInfo( GetOwner(), GetOwner(), GetDamageForActivity( nHitActivity ), DMG_CLUB );
+	TraceAttackToTriggers( triggerInfo, traceHit.startpos, traceHit.endpos, vec3_origin );
+#endif
+
+	if ( traceHit.fraction == 1.0 )
+	{
+		float meleeHullRadius = 1.732f * MELEE_HULL_DIM;  // hull is +/- 16, so use cuberoot of 2 to determine how big the hull is from center to the corner point
+
+		// Back off by hull "radius"
+		swingEnd -= forward * meleeHullRadius;
+
+		UTIL_TraceHull( swingStart, swingEnd, g_meleeMins, g_meleeMaxs, MASK_SHOT_HULL, pOwner, COLLISION_GROUP_NONE, &traceHit );
+		if ( traceHit.fraction < 1.0 && traceHit.m_pEnt )
+		{
+			Vector vecToTarget = traceHit.m_pEnt->GetAbsOrigin() - swingStart;
+			VectorNormalize( vecToTarget );
+
+			float dot = vecToTarget.Dot( forward );
+
+			// YWB:  Make sure they are sort of facing the guy at least...
+			if ( dot < 0.70721f )
+			{
+				// Force amiss
+				traceHit.fraction = 1.0f;
 			}
 			else
 			{
-				bPlayImpactEffect = true; // always show impact effects on world objects
+				nHitActivity = ChooseIntersectionPointAndActivity( traceHit, g_meleeMins, g_meleeMaxs, pOwner );
 			}
 		}
-		else
-		{
-			bDoEffects = false;
-		}
 	}
 
+	WeaponSound( SINGLE );
 
-#endif
-
-	if ( bPlayImpactEffect )
+	// -------------------------
+	//	Miss
+	// -------------------------
+	if ( traceHit.fraction == 1.0f )
 	{
-		// delay the decal a bit
-		m_trHit = tr;
-		
-		// Store the ent in an EHANDLE, just in case it goes away by the time we get into our think function.
-		m_pTraceHitEnt = tr.m_pEnt; 
+		nHitActivity = bIsSecondary ? ACT_VM_MISSCENTER2 : ACT_VM_MISSCENTER;
 
-		SetThink( &CWeaponTFCBaseMelee::Smack );
-		SetNextThink( gpGlobals->curtime + 0.2f );
+		// We want to test the first swing again
+		Vector testEnd = swingStart + forward * GetRange();
+		
+		// See if we happened to hit water
+		ImpactWater( swingStart, testEnd );
+	}
+	else
+	{
+		Hit( traceHit, nHitActivity );
 	}
 
-#ifndef CLIENT_DLL
-	lagcompensation->FinishLagCompensation( pPlayer );
-#endif	//CLIENT_DLL
-}
+	// Send the anim
+	SendWeaponAnim( nHitActivity );
 
-void CWeaponTFCBaseMelee::Smack()
-{
-	if ( !GetPlayerOwner() )
-		return;
+	ToHL2MPPlayer(pOwner)->DoAnimationEvent( PLAYERANIMEVENT_ATTACK_PRIMARY );
 
-	m_trHit.m_pEnt = m_pTraceHitEnt;
-
-	if ( !m_trHit.m_pEnt || ( m_trHit.surface.flags & SURF_SKY ) )
-		return;
-
-	if ( m_trHit.fraction == 1.0 )
-		return;
-
-	UTIL_ImpactTrace( &m_trHit, DMG_CLUB );
-	
-	surfacedata_t *psurf = physprops->GetSurfaceData( m_trHit.surface.surfaceProps );
-	if ( psurf->game.material != CHAR_TEX_FLESH && psurf->game.material != CHAR_TEX_BLOODYFLESH )
-		WeaponSound( MELEE_HIT_WORLD );
+	//Setup our next attack times
+	m_flNextPrimaryAttack = gpGlobals->curtime + GetFireRate();
+	m_flNextSecondaryAttack = gpGlobals->curtime + SequenceDuration();
 }

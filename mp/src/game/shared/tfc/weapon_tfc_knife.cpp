@@ -26,11 +26,6 @@ END_PREDICTION_DATA()
 LINK_ENTITY_TO_CLASS( tf_weapon_knife, CTFCKnife );
 PRECACHE_WEAPON_REGISTER( tf_weapon_knife );
 
-#ifndef CLIENT_DLL
-BEGIN_DATADESC( CTFCKnife )
-END_DATADESC()
-#endif
-
 // ----------------------------------------------------------------------------- //
 // CTFCKnife implementation.
 // ----------------------------------------------------------------------------- //
@@ -38,29 +33,25 @@ CTFCKnife::CTFCKnife()
 {
 }
 
-void CTFCKnife::Smack( void )
+// ----------------------------------------------------------------------------- //
+// Purpose:
+// ----------------------------------------------------------------------------- //
+void CTFCKnife::ImpactEffect( trace_t &traceHit )
 {
-	if ( !GetPlayerOwner() )
-		return;
-
-	m_trHit.m_pEnt = m_pTraceHitEnt;
-
-	if ( !m_trHit.m_pEnt || ( m_trHit.surface.flags & SURF_SKY ) )
-		return;
-
-	if ( m_trHit.fraction == 1.0 )
+	// See if we hit water (we don't do the other impact effects in this case)
+	if ( ImpactWater( traceHit.startpos, traceHit.endpos ) )
 		return;
 
 	CEffectData data;
-	data.m_vOrigin = m_trHit.endpos;
-	data.m_vStart = m_trHit.startpos;
-	data.m_nSurfaceProp = m_trHit.surface.surfaceProps;
+	data.m_vOrigin = traceHit.endpos;
+	data.m_vStart = traceHit.startpos;
+	data.m_nSurfaceProp = traceHit.surface.surfaceProps;
 	data.m_nDamageType = DMG_SLASH;
-	data.m_nHitBox = m_trHit.hitbox;
+	data.m_nHitBox = traceHit.hitbox;
 #ifdef CLIENT_DLL
-	data.m_hEntity = m_trHit.m_pEnt->GetRefEHandle();
+	data.m_hEntity = traceHit.m_pEnt->GetRefEHandle();
 #else
-	data.m_nEntIndex = m_trHit.m_pEnt->entindex();
+	data.m_nEntIndex = traceHit.m_pEnt->entindex();
 #endif
 
 	CPASFilter filter( data.m_vOrigin );

@@ -24,18 +24,10 @@ public:
 	DECLARE_CLASS( CTFCMedikit, CTFCCrowbar );
 	DECLARE_NETWORKCLASS(); 
 	DECLARE_PREDICTABLE();
-#ifndef CLIENT_DLL
-	DECLARE_DATADESC();
-#endif
 	
 	CTFCMedikit();
 
 	virtual TFCWeaponID GetWeaponID( void ) const { return TF_WEAPON_MEDIKIT; }
-
-
-#ifndef CLIENT_DLL
-	virtual void AxeHit( CBaseEntity *pHit, bool bFirstSwing, trace_t &tr, float *flDamage, bool *bDoEffects );
-#endif
 
 private:
 	CTFCMedikit( const CTFCMedikit & ) {}

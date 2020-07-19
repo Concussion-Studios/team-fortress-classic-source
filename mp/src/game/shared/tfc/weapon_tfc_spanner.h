@@ -24,21 +24,12 @@ public:
 	DECLARE_CLASS( CTFCSpanner, CTFCCrowbar );
 	DECLARE_NETWORKCLASS(); 
 	DECLARE_PREDICTABLE();
-#ifndef CLIENT_DLL
-	DECLARE_DATADESC();
-#endif
 
 public:
 	
 	CTFCSpanner();
 
 	virtual TFCWeaponID GetWeaponID( void ) const { return TF_WEAPON_SPANNER; }
-
-// CTFCCrowbar overrides.
-public:
-#ifdef GAME_DLL
-	virtual void AxeHit( CBaseEntity *pHit, bool bFirstSwing, trace_t &tr, float *flDamage, bool *bDoEffects );
-#endif
 
 private:
 	

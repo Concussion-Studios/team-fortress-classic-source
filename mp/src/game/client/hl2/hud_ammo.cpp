@@ -37,6 +37,7 @@ public:
 	void SetAmmo(int ammo, bool playAnimation);
 	void SetAmmo2(int ammo2, bool playAnimation);
 	virtual void Paint( void );
+	virtual void PaintBackground( void );
 
 protected:
 	virtual void OnThink();
@@ -61,6 +62,8 @@ DECLARE_HUDELEMENT( CHudAmmo );
 CHudAmmo::CHudAmmo( const char *pElementName ) : BaseClass(NULL, "HudAmmo"), CHudElement( pElementName )
 {
 	SetHiddenBits( HIDEHUD_HEALTH | HIDEHUD_PLAYERDEAD | HIDEHUD_NEEDSUIT | HIDEHUD_WEAPONSELECTION );
+
+	SetPaintBackgroundType( 0 );
 
 	hudlcd->SetGlobalStat( "(ammo_primary)", "0" );
 	hudlcd->SetGlobalStat( "(ammo_secondary)", "0" );
@@ -171,18 +174,11 @@ void CHudAmmo::UpdatePlayerAmmo( C_BasePlayer *player )
 		SetAmmo2(ammo2, false);
 
 		// update whether or not we show the total ammo display
-		if (wpn->UsesClipsForAmmo1())
-		{
-			SetShouldDisplaySecondaryValue(true);
-			g_pClientMode->GetViewportAnimationController()->StartAnimationSequence("WeaponUsesClips");
-		}
+		if ( wpn->UsesClipsForAmmo1() )
+			SetShouldDisplaySecondaryValue( true);
 		else
-		{
-			g_pClientMode->GetViewportAnimationController()->StartAnimationSequence("WeaponDoesNotUseClips");
-			SetShouldDisplaySecondaryValue(false);
-		}
+			SetShouldDisplaySecondaryValue( false );
 
-		g_pClientMode->GetViewportAnimationController()->StartAnimationSequence("WeaponChanged");
 		m_hCurrentActiveWeapon = wpn;
 	}
 }
@@ -231,17 +227,10 @@ void CHudAmmo::UpdateVehicleAmmo( C_BasePlayer *player, IClientVehicle *pVehicle
 
 		// update whether or not we show the total ammo display
 		if (pVehicle->PrimaryAmmoUsesClips())
-		{
 			SetShouldDisplaySecondaryValue(true);
-			g_pClientMode->GetViewportAnimationController()->StartAnimationSequence("WeaponUsesClips");
-		}
 		else
-		{
-			g_pClientMode->GetViewportAnimationController()->StartAnimationSequence("WeaponDoesNotUseClips");
 			SetShouldDisplaySecondaryValue(false);
-		}
 
-		g_pClientMode->GetViewportAnimationController()->StartAnimationSequence("WeaponChanged");
 		m_hCurrentVehicle = pVehicleEnt;
 	}
 }
@@ -351,6 +340,20 @@ void CHudAmmo::Paint( void )
 #endif // !HL2MP && TFC_DLL
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CHudAmmo::PaintBackground()
+{ 
+	int wide, tall;
+	GetSize( wide, tall );
+	
+	//Color col = GetBgColor();
+
+	DrawBoxFade( 0, 0, wide, tall, Color( 0, 0, 0, 200 ), 1.0f, 255, 0, true );
+}
+
+#ifndef TFC_DLL
 //-----------------------------------------------------------------------------
 // Purpose: Displays the secondary ammunition level
 //-----------------------------------------------------------------------------
@@ -499,4 +502,4 @@ private:
 };
 
 DECLARE_HUDELEMENT( CHudSecondaryAmmo );
-
+#endif // TFC_DLL

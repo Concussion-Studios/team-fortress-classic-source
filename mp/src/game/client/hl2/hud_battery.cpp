@@ -16,7 +16,8 @@
 #include "hud_macros.h"
 #include "hud_numericdisplay.h"
 #include "iclientmode.h"
-
+#include <vgui/ISurface.h>
+#include <vgui/ISystem.h>
 #include "vgui_controls/AnimationController.h"
 #include "vgui/ILocalize.h"
 
@@ -24,6 +25,8 @@
 #include "tier0/memdbgon.h"
 
 #define INIT_BAT	-1
+
+using namespace vgui;
 
 //-----------------------------------------------------------------------------
 // Purpose: Displays suit power (armor) on hud
@@ -40,10 +43,20 @@ public:
 	void OnThink( void );
 	void MsgFunc_Battery(bf_read &msg );
 	bool ShouldDraw();
+
+	virtual void Paint( void );
+	virtual void PaintBackground( void );
+	virtual void ApplySchemeSettings( IScheme *scheme );
 	
 private:
 	int		m_iBat;	
 	int		m_iNewBat;
+	CHudTexture *m_pBatteryIcon;
+
+	CPanelAnimationVarAliasType( float, icon_xpos, "icon_xpos", "0", "proportional_float" );
+	CPanelAnimationVarAliasType( float, icon_ypos, "icon_ypos", "2", "proportional_float" );
+	CPanelAnimationVarAliasType( float, icon_tall, "icon_tall", "64", "proportional_float" );
+	CPanelAnimationVarAliasType( float, icon_wide, "icon_wide", "64", "proportional_float" );
 };
 
 DECLARE_HUDELEMENT( CHudBattery );
@@ -55,6 +68,9 @@ DECLARE_HUD_MESSAGE( CHudBattery, Battery );
 CHudBattery::CHudBattery( const char *pElementName ) : BaseClass(NULL, "HudSuit"), CHudElement( pElementName )
 {
 	SetHiddenBits( HIDEHUD_HEALTH | HIDEHUD_NEEDSUIT );
+
+	SetPaintBackgroundType( 0 );
+	SetPaintBackgroundEnabled( false );
 }
 
 //-----------------------------------------------------------------------------
@@ -73,8 +89,50 @@ void CHudBattery::Init( void )
 //-----------------------------------------------------------------------------
 void CHudBattery::Reset( void )
 {
-	SetLabelText(g_pVGuiLocalize->Find("#Valve_Hud_SUIT"));
 	SetDisplayValue(m_iBat);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CHudBattery::ApplySchemeSettings( IScheme *scheme )
+{
+	BaseClass::ApplySchemeSettings( scheme );
+
+	if( !m_pBatteryIcon )
+		m_pBatteryIcon = gHUD.GetIcon( "shield_icon" );
+
+	if( m_pBatteryIcon )
+	{
+
+		icon_tall = GetTall() - YRES(2);
+		float scale = icon_tall / (float)m_pBatteryIcon->Height();
+		icon_wide = ( scale ) * (float)m_pBatteryIcon->Width();
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CHudBattery::Paint( void )
+{
+	if( m_pBatteryIcon )
+		m_pBatteryIcon->DrawSelf( icon_xpos, icon_ypos, icon_wide, icon_tall, GetFgColor() );
+
+	//draw the health icon
+	BaseClass::Paint();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CHudBattery::PaintBackground()
+{ 
+	int wide, tall;
+	GetSize( wide, tall );
+	Color col = GetBgColor();
+
+	DrawBoxFade( 0, 0, wide, tall, col, 1.0f, 255, 0, true );
 }
 
 //-----------------------------------------------------------------------------
