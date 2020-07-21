@@ -15,9 +15,12 @@
 #include "team.h"
 #include "tier0/vprof.h"
 #include "filesystem.h"
+#include "viewport_panel_names.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+ConVar sv_motd_unload_on_dismissal( "sv_motd_unload_on_dismissal", "0", 0, "If enabled, the MOTD contents will be unloaded when the player closes the MOTD." );
 
 extern CBaseEntity*	FindPickerEntityClass( CBasePlayer *pPlayer, char *classname );
 extern bool	g_fGameOver;
@@ -44,9 +47,21 @@ void FinishClientPutInServer( CHL2MP_Player *pPlayer )
 
 	// notify other clients of player joining the game
 	if ( !pPlayer->IsFakeClient() )
-	{
 		UTIL_ClientPrintAll( HUD_PRINTNOTIFY, "#Game_connected", sName[0] != 0 ? sName : "<unconnected>" );
-	}
+
+	// Show The MOTD
+	const ConVar *hostname = cvar->FindVar( "hostname" );
+	const char *title = (hostname) ? hostname->GetString() : "MESSAGE OF THE DAY";
+
+	KeyValues *data = new KeyValues("data");
+	data->SetString( "title", title );		// info panel title
+	data->SetString( "type", "1" );			// show userdata from stringtable entry
+	data->SetString( "msg",	"motd" );		// use this stringtable entry
+	data->SetBool( "unload", sv_motd_unload_on_dismissal.GetBool() );
+
+	pPlayer->ShowViewPortPanel( PANEL_INFO, true, data );
+
+	data->deleteThis();
 }
 
 /*
@@ -123,21 +138,13 @@ void ClientGamePrecache( void )
 // called by ClientKill and DeadThink
 void respawn( CBaseEntity *pEdict, bool fCopyCorpse )
 {
-	if ( gpGlobals->coop || gpGlobals->deathmatch )
+	CHL2MP_Player *pPlayer = ToHL2MPPlayer( pEdict );
+	if ( pPlayer )
 	{
-		if ( fCopyCorpse )
-		{
-			// make a copy of the dead body for appearances sake
-			dynamic_cast< CBasePlayer* >( pEdict )->CreateCorpse();
-		}
-
-		// respawn player
-		pEdict->Spawn();
-	}
-	else
-	{    
-		// restart the entire server
-		engine->ServerCommand( "reload\n" );
+		if ( gpGlobals->curtime > pPlayer->GetDeathTime() + DEATH_ANIMATION_TIME )
+			pPlayer->Spawn(); // respawn player		
+		else
+			pPlayer->SetNextThink( gpGlobals->curtime + 0.1f );
 	}
 }
 

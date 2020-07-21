@@ -748,62 +748,14 @@ void CHL2MPRules::ClientSettingsChanged( CBasePlayer *pPlayer )
 #ifndef CLIENT_DLL
 	
 	CHL2MP_Player *pHL2Player = ToHL2MPPlayer( pPlayer );
-
 	if ( pHL2Player == NULL )
 		return;
 
-	const char *pCurrentModel = modelinfo->GetModelName( pPlayer->GetModel() );
-	const char *szModelName = engine->GetClientConVarValue( engine->IndexOfEdict( pPlayer->edict() ), "cl_playermodel" );
-
-	//If we're different.
-	if ( stricmp( szModelName, pCurrentModel ) )
-	{
-		//Too soon, set the cvar back to what it was.
-		//Note: this will make this function be called again
-		//but since our models will match it'll just skip this whole dealio.
-		if ( pHL2Player->GetNextModelChangeTime() >= gpGlobals->curtime )
-		{
-			char szReturnString[512];
-
-			Q_snprintf( szReturnString, sizeof (szReturnString ), "cl_playermodel %s\n", pCurrentModel );
-			engine->ClientCommand ( pHL2Player->edict(), szReturnString );
-
-			Q_snprintf( szReturnString, sizeof( szReturnString ), "Please wait %d more seconds before trying to switch.\n", (int)(pHL2Player->GetNextModelChangeTime() - gpGlobals->curtime) );
-			ClientPrint( pHL2Player, HUD_PRINTTALK, szReturnString );
-			return;
-		}
-
-		if ( HL2MPRules()->IsTeamplay() == false )
-		{
-			pHL2Player->SetPlayerModel();
-
-			const char *pszCurrentModelName = modelinfo->GetModelName( pHL2Player->GetModel() );
-
-			char szReturnString[128];
-			Q_snprintf( szReturnString, sizeof( szReturnString ), "Your player model is: %s\n", pszCurrentModelName );
-
-			ClientPrint( pHL2Player, HUD_PRINTTALK, szReturnString );
-		}
-		else
-		{
-			if ( Q_stristr( szModelName, "models/human") )
-			{
-				pHL2Player->ChangeTeam( TEAM_REBELS );
-			}
-			else
-			{
-				pHL2Player->ChangeTeam( TEAM_COMBINE );
-			}
-		}
-	}
 	if ( sv_report_client_settings.GetInt() == 1 )
-	{
 		UTIL_LogPrintf( "\"%s\" cl_cmdrate = \"%s\"\n", pHL2Player->GetPlayerName(), engine->GetClientConVarValue( pHL2Player->entindex(), "cl_cmdrate" ));
-	}
 
 	BaseClass::ClientSettingsChanged( pPlayer );
 #endif
-	
 }
 
 int CHL2MPRules::PlayerRelationship( CBaseEntity *pPlayer, CBaseEntity *pTarget )

@@ -8,7 +8,7 @@
 #include "nailgun_nail.h"
 
 
-#define NAILGUN_MODEL "models/nail.mdl"
+#define NAILGUN_MODEL "models/weapons/nail.mdl"
 
 
 LINK_ENTITY_TO_CLASS( tf_nailgun_nail, CTFNailgunNail );

@@ -146,7 +146,8 @@ void CHL2MP_Player::DoAnimationEvent( PlayerAnimEvent_t event, int nData )
 	MDLCACHE_CRITICAL_SECTION();
 #endif // CLIENT_DLL
 
-	m_PlayerAnimState->DoAnimationEvent( event, nData );
+	if ( GetAnimState() )
+		GetAnimState()->DoAnimationEvent( event, nData );
 
 #ifndef CLIENT_DLL
     TE_PlayerAnimEvent( this, event, nData );
@@ -159,35 +160,33 @@ void CHL2MP_Player::DoAnimationEvent( PlayerAnimEvent_t event, int nData )
 //-----------------------------------------------------------------------------
 void CHL2MP_Player::SetAnimation( PLAYER_ANIM playerAnim )
 {
-	if ( playerAnim == PLAYER_WALK || playerAnim == PLAYER_IDLE ) 
-		return;
-
-    if ( playerAnim == PLAYER_RELOAD )
-        DoAnimationEvent( PLAYERANIMEVENT_RELOAD );
-    else if ( playerAnim == PLAYER_JUMP )
-        DoAnimationEvent( PLAYERANIMEVENT_JUMP );
-    else
-        Assert( !"CHL2MP_Player::SetAnimation OBSOLETE!" );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-CStudioHdr *CHL2MP_Player::OnNewModel( void )
-{
-	CStudioHdr *hdr = BaseClass::OnNewModel();
-	if ( hdr )
+	switch ( playerAnim )
 	{
-#ifdef CLIENT_DLL
-		InitializePoseParams();
-#endif // CLIENT_DLL
-
-		// Reset the players animation states, gestures
-		if ( m_PlayerAnimState )
-			m_PlayerAnimState->OnNewModel();
+	case PLAYER_IDLE:
+		break;
+	case PLAYER_WALK:
+		break;
+	case PLAYER_JUMP:
+		break;
+	case PLAYER_SUPERJUMP:
+		break;
+	case PLAYER_DIE:
+		break;
+	case PLAYER_ATTACK1:
+		DoAnimationEvent( PLAYERANIMEVENT_ATTACK_PRIMARY );
+		break;
+	case PLAYER_IN_VEHICLE:
+		break;
+	case PLAYER_RELOAD:
+		DoAnimationEvent( PLAYERANIMEVENT_RELOAD );
+		break;
+	case PLAYER_START_AIMING:
+		break;
+	case PLAYER_LEAVE_AIMING:
+		break;
+	default:
+		break;
 	}
-
-	return hdr;
 }
 
 //-----------------------------------------------------------------------------

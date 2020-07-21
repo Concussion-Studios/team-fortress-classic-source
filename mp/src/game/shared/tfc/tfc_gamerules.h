@@ -50,9 +50,6 @@ public:
 #else
 	virtual void CreateStandardEntities( void ) OVERRIDE;
 
-	virtual void ClientSettingsChanged( CBasePlayer *pPlayer ) OVERRIDE;
-	virtual bool ClientCommand( CBaseEntity *pEdict, const CCommand &args ) OVERRIDE;
-
 	virtual bool  FlPlayerFallDeathDoesScreenFade( CBasePlayer *pl ) OVERRIDE { return false; }
 	virtual bool UseSuicidePenalty() OVERRIDE { return false; }
 

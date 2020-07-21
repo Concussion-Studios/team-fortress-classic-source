@@ -17,6 +17,18 @@
 #include "c_basetempentity.h"
 #include "flashlighteffect.h"
 
+// ------------------------------------------------------------------------------------------------------------- //
+// Tony; m_pFlashlightEffect is private, so just subclass. We may want to do some more stuff with it later anyway.
+// ------------------------------------------------------------------------------------------------------------- //
+class CHL2MPFlashlightEffect : public CFlashlightEffect
+{
+public:
+	CHL2MPFlashlightEffect(int nIndex = 0) : CFlashlightEffect( nIndex  ) {}
+	~CHL2MPFlashlightEffect() {};
+
+	virtual void UpdateLight( const Vector &vecPos, const Vector &vecDir, const Vector &vecRight, const Vector &vecUp, int nDistance );
+};
+
 // -------------------------------------------------------------------------------- //
 // Player animation event. Sent to the client when a player fires, jumps, reloads, etc..
 // -------------------------------------------------------------------------------- //
@@ -34,22 +46,44 @@ public:
 	CNetworkVar( int, m_nData );
 };
 
-//Tony; m_pFlashlightEffect is private, so just subclass. We may want to do some more stuff with it later anyway.
-class CHL2MPFlashlightEffect : public CFlashlightEffect
+// -------------------------------------------------------------------------------- //
+// Ragdoll entities.
+// -------------------------------------------------------------------------------- //
+class C_HL2MPRagdoll : public C_BaseAnimatingOverlay
 {
 public:
-	CHL2MPFlashlightEffect(int nIndex = 0) : 
-		CFlashlightEffect( nIndex  )
-	{
-	}
-	~CHL2MPFlashlightEffect() {};
+	DECLARE_CLASS( C_HL2MPRagdoll, C_BaseAnimatingOverlay );
+	DECLARE_CLIENTCLASS();
+	
+	C_HL2MPRagdoll();
+	~C_HL2MPRagdoll();
 
-	virtual void UpdateLight(const Vector &vecPos, const Vector &vecDir, const Vector &vecRight, const Vector &vecUp, int nDistance);
+	virtual void OnDataChanged( DataUpdateType_t type );
+
+	int GetPlayerEntIndex() const;
+	IRagdoll* GetIRagdoll() const {	return m_pRagdoll; }
+
+	void ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName );
+	void UpdateOnRemove( void );
+	virtual void SetupWeights( const matrix3x4_t *pBoneToWorld, int nFlexWeightCount, float *pFlexWeights, float *pFlexDelayedWeights );
+	
+private:
+	
+	C_HL2MPRagdoll( const C_HL2MPRagdoll & ) {}
+
+	void Interp_Copy( C_BaseAnimatingOverlay *pDestinationEntity );
+	void CreateHL2MPRagdoll( void );
+
+private:
+
+	EHANDLE	m_hPlayer;
+	CNetworkVector( m_vecRagdollVelocity );
+	CNetworkVector( m_vecRagdollOrigin );
 };
 
-//=============================================================================
-// >> HL2MP_Player
-//=============================================================================
+// -------------------------------------------------------------------------------- //
+// Player Class.
+// -------------------------------------------------------------------------------- //
 class C_HL2MP_Player : public C_BaseHLPlayer
 {
 public:
@@ -69,6 +103,7 @@ public:
 	virtual bool CreateMove( float flInputSampleTime, CUserCmd *pCmd );
 
 	void ClientThink( void );
+	void Respawn();
 
 	static C_HL2MP_Player* GetLocalHL2MPPlayer();
 	
@@ -112,6 +147,8 @@ public:
 
 // shared code
 public:
+
+	virtual CHL2MPPlayerAnimState* GetAnimState() { return m_PlayerAnimState; }
 
 	Vector GetAttackSpread( CBaseCombatWeapon *pWeapon, CBaseEntity *pTarget = NULL );
 	virtual Vector GetAutoaimVector( float flDelta );
@@ -173,38 +210,4 @@ inline C_HL2MP_Player *ToHL2MPPlayer( CBaseEntity *pEntity )
 
 	return dynamic_cast<C_HL2MP_Player*>( pEntity );
 }
-
-
-class C_HL2MPRagdoll : public C_BaseAnimatingOverlay
-{
-public:
-	DECLARE_CLASS( C_HL2MPRagdoll, C_BaseAnimatingOverlay );
-	DECLARE_CLIENTCLASS();
-	
-	C_HL2MPRagdoll();
-	~C_HL2MPRagdoll();
-
-	virtual void OnDataChanged( DataUpdateType_t type );
-
-	int GetPlayerEntIndex() const;
-	IRagdoll* GetIRagdoll() const {	return m_pRagdoll; }
-
-	void ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName );
-	void UpdateOnRemove( void );
-	virtual void SetupWeights( const matrix3x4_t *pBoneToWorld, int nFlexWeightCount, float *pFlexWeights, float *pFlexDelayedWeights );
-	
-private:
-	
-	C_HL2MPRagdoll( const C_HL2MPRagdoll & ) {}
-
-	void Interp_Copy( C_BaseAnimatingOverlay *pDestinationEntity );
-	void CreateHL2MPRagdoll( void );
-
-private:
-
-	EHANDLE	m_hPlayer;
-	CNetworkVector( m_vecRagdollVelocity );
-	CNetworkVector( m_vecRagdollOrigin );
-};
-
 #endif //HL2MP_PLAYER_H

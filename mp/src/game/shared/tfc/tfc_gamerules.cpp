@@ -112,37 +112,6 @@ void CTFCGameRules::CreateStandardEntities( void )
 	CBaseEntity::Create( "tfc_gamerules", vec3_origin, vec3_angle );
 	Assert( pEnt );
 }
-
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-bool CTFCGameRules::ClientCommand( CBaseEntity *pEdict, const CCommand &args )
-{
-	if( CTeamplayRules::ClientCommand( pEdict, args ) )
-		return true;
-
-	CHL2MP_Player *pPlayer = ToHL2MPPlayer( pEdict );
-	if ( pPlayer->ClientCommand( args ) )
-		return true;
-
-	return false;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose:
-//-----------------------------------------------------------------------------
-void CTFCGameRules::ClientSettingsChanged( CBasePlayer *pPlayer )
-{
-	CHL2MP_Player *pTFCPlayer = ToHL2MPPlayer( pPlayer );
-	if ( pTFCPlayer == NULL )
-		return;
-
-	if ( sv_report_client_settings.GetInt() == 1 )
-		UTIL_LogPrintf( "\"%s\" cl_cmdrate = \"%s\"\n", pTFCPlayer->GetPlayerName(), engine->GetClientConVarValue( pTFCPlayer->entindex(), "cl_cmdrate" ));
-
-	CTeamplayRules::ClientSettingsChanged( pPlayer );
-}
-
 #endif
 
 // shared ammo definition

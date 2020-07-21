@@ -33,23 +33,60 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-int g_iLastCitizenModel = 0;
-int g_iLastCombineModel = 0;
-
 CBaseEntity	 *g_pLastBlueSpawn = NULL;
 CBaseEntity	 *g_pLastRedSpawn = NULL;
 extern CBaseEntity				*g_pLastSpawn;
 extern ConVar hl2_normspeed;
 extern int	gEvilImpulse101;
+extern ConVar flashlight;
 
 #define HL2MP_COMMAND_MAX_RATE 0.3
 #define HL2MP_PUSHAWAY_THINK_CONTEXT	"HL2MPPushawayThink"
 #define CYCLELATCH_UPDATE_INTERVAL	0.2f
+#define TEAM_CHANGE_INTERVAL 5.0f
+#define HL2MPPLAYER_PHYSDAMAGE_SCALE 4.0f
 
 LINK_ENTITY_TO_CLASS( player, CHL2MP_Player );
 
 LINK_ENTITY_TO_CLASS( info_player_blue, CPointEntity );
 LINK_ENTITY_TO_CLASS( info_player_red, CPointEntity );
+
+//* **************** CTEPlayerAnimEvent* *********************
+
+IMPLEMENT_SERVERCLASS_ST_NOBASE( CTEPlayerAnimEvent, DT_TEPlayerAnimEvent )
+	SendPropEHandle( SENDINFO( m_hPlayer ) ),
+	SendPropInt( SENDINFO( m_iEvent ), Q_log2( PLAYERANIMEVENT_COUNT ) + 1, SPROP_UNSIGNED ),
+	SendPropInt( SENDINFO( m_nData ), 32 )
+END_SEND_TABLE()
+
+static CTEPlayerAnimEvent g_TEPlayerAnimEvent( "PlayerAnimEvent" );
+
+void TE_PlayerAnimEvent( CBasePlayer *pPlayer, PlayerAnimEvent_t event, int nData )
+{
+	CPVSFilter filter( ( const Vector& )pPlayer->EyePosition() );
+	if ( gpGlobals->maxClients > 1 && event < PLAYERANIMEVENT_DIE )
+		filter.RemoveRecipient( pPlayer);	//Tony; use prediction rules.
+	
+	g_TEPlayerAnimEvent.m_hPlayer = pPlayer;
+	g_TEPlayerAnimEvent.m_iEvent = event;
+	g_TEPlayerAnimEvent.m_nData = nData;
+	g_TEPlayerAnimEvent.Create( filter, 0 );
+}
+
+//* **************** CHL2MPRagdoll* *********************
+
+LINK_ENTITY_TO_CLASS( hl2mp_ragdoll, CHL2MPRagdoll );
+
+IMPLEMENT_SERVERCLASS_ST_NOBASE( CHL2MPRagdoll, DT_HL2MPRagdoll )
+	SendPropVector( SENDINFO(m_vecRagdollOrigin), -1,  SPROP_COORD ),
+	SendPropEHandle( SENDINFO( m_hPlayer ) ),
+	SendPropModelIndex( SENDINFO( m_nModelIndex ) ),
+	SendPropInt		( SENDINFO(m_nForceBone), 8, 0 ),
+	SendPropVector	( SENDINFO(m_vecForce), -1, SPROP_NOSCALE ),
+	SendPropVector( SENDINFO( m_vecRagdollVelocity ) )
+END_SEND_TABLE()
+
+//* **************** CHL2MP_Player* *********************
 
 extern void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 
@@ -109,38 +146,6 @@ END_SEND_TABLE()
 BEGIN_DATADESC( CHL2MP_Player )
 END_DATADESC()
 
-const char *g_ppszRandomCitizenModels[] = 
-{
-	"models/humans/group03/male_01.mdl",
-	"models/humans/group03/male_02.mdl",
-	"models/humans/group03/female_01.mdl",
-	"models/humans/group03/male_03.mdl",
-	"models/humans/group03/female_02.mdl",
-	"models/humans/group03/male_04.mdl",
-	"models/humans/group03/female_03.mdl",
-	"models/humans/group03/male_05.mdl",
-	"models/humans/group03/female_04.mdl",
-	"models/humans/group03/male_06.mdl",
-	"models/humans/group03/female_06.mdl",
-	"models/humans/group03/male_07.mdl",
-	"models/humans/group03/female_07.mdl",
-	"models/humans/group03/male_08.mdl",
-	"models/humans/group03/male_09.mdl",
-};
-
-const char *g_ppszRandomCombineModels[] =
-{
-	"models/combine_soldier.mdl",
-	"models/combine_soldier_prisonguard.mdl",
-	"models/combine_super_soldier.mdl",
-	"models/police.mdl",
-};
-
-#define MODEL_CHANGE_INTERVAL 5.0f
-#define TEAM_CHANGE_INTERVAL 5.0f
-
-#define HL2MPPLAYER_PHYSDAMAGE_SCALE 4.0f
-
 #pragma warning( disable : 4355 )
 
 CHL2MP_Player::CHL2MP_Player()
@@ -148,12 +153,12 @@ CHL2MP_Player::CHL2MP_Player()
 	//Tony; create our player animation state.
 	m_PlayerAnimState = CreateHL2MPPlayerAnimState( this );
 	UseClientSideAnimation();
+	SetPredictionEligible( true );
 
 	m_angEyeAngles.Init();
 
 	m_iLastWeaponFireUsercmd = 0;
 
-	m_flNextModelChangeTime = 0.0f;
 	m_flNextTeamChangeTime = 0.0f;
 
 	m_iSpawnInterpCounter = 0;
@@ -162,46 +167,33 @@ CHL2MP_Player::CHL2MP_Player()
 
 	m_cycleLatch = 0;
 	m_cycleLatchTimer.Invalidate();
-
-	BaseClass::ChangeTeam( 0 );
-	
 }
 
 CHL2MP_Player::~CHL2MP_Player( void )
 {
-	m_PlayerAnimState->Release();
-
+	GetAnimState()->Release();
 }
 
 void CHL2MP_Player::UpdateOnRemove( void )
+{
+	RemoveRagdollEntity();
+	BaseClass::UpdateOnRemove();
+}
+
+void CHL2MP_Player::RemoveRagdollEntity()
 {
 	if ( m_hRagdoll )
 	{
 		UTIL_RemoveImmediate( m_hRagdoll );
 		m_hRagdoll = NULL;
 	}
-
-	BaseClass::UpdateOnRemove();
 }
 
 void CHL2MP_Player::Precache( void )
 {
 	BaseClass::Precache();
 
-	PrecacheModel ( "sprites/glow01.vmt" );
-
-	//Precache Citizen models
-	int nHeads = ARRAYSIZE( g_ppszRandomCitizenModels );
-	int i;	
-
-	for ( i = 0; i < nHeads; ++i )
-		 PrecacheModel( g_ppszRandomCitizenModels[i] );
-
-	//Precache Combine Models
-	nHeads = ARRAYSIZE( g_ppszRandomCombineModels );
-
-	for ( i = 0; i < nHeads; ++i )
-		 PrecacheModel( g_ppszRandomCombineModels[i] );
+	PrecacheModel( "models/humans/group03/male_05.mdl" );
 }
 
 void CHL2MP_Player::GiveAllItems( void )
@@ -218,6 +210,7 @@ void CHL2MP_Player::GiveAllItems( void )
 	// Guns
 	GiveNamedItem( "tf_weapon_ac" );
 	GiveNamedItem( "tf_weapon_ng" );
+	GiveNamedItem( "tf_weapon_gl" );
 	GiveNamedItem( "tf_weapon_shotgun" );
 	GiveNamedItem( "tf_weapon_superng" );
 	GiveNamedItem( "tf_weapon_supershotgun" );
@@ -237,20 +230,7 @@ void CHL2MP_Player::PickDefaultSpawnTeam( void )
 		if ( HL2MPRules()->IsTeamplay() == false )
 		{
 			if ( GetModelPtr() == NULL )
-			{
-				const char *szModelName = NULL;
-				szModelName = engine->GetClientConVarValue( engine->IndexOfEdict( edict() ), "cl_playermodel" );
-
-				if ( ValidatePlayerModel( szModelName ) == false )
-				{
-					char szReturnString[512];
-
-					Q_snprintf( szReturnString, sizeof (szReturnString ), "cl_playermodel models/combine_soldier.mdl\n" );
-					engine->ClientCommand ( edict(), szReturnString );
-				}
-
 				ChangeTeam( TEAM_UNASSIGNED );
-			}
 		}
 		else
 		{
@@ -258,41 +238,31 @@ void CHL2MP_Player::PickDefaultSpawnTeam( void )
 			CTeam *pRebels = g_Teams[TEAM_REBELS];
 
 			if ( pCombine == NULL || pRebels == NULL )
-			{
 				ChangeTeam( random->RandomInt( TEAM_COMBINE, TEAM_REBELS ) );
-			}
 			else
 			{
 				if ( pCombine->GetNumPlayers() > pRebels->GetNumPlayers() )
-				{
 					ChangeTeam( TEAM_REBELS );
-				}
 				else if ( pCombine->GetNumPlayers() < pRebels->GetNumPlayers() )
-				{
 					ChangeTeam( TEAM_COMBINE );
-				}
 				else
-				{
 					ChangeTeam( random->RandomInt( TEAM_COMBINE, TEAM_REBELS ) );
-				}
 			}
 		}
 	}
 }
 
-void CHL2MP_Player::HL2MPPushawayThink(void)
+void CHL2MP_Player::HL2MPPushawayThink( void )
 {
 	// Push physics props out of our way.
 	PerformObstaclePushaway( this );
 	SetNextThink( gpGlobals->curtime + PUSHAWAY_THINK_INTERVAL, HL2MP_PUSHAWAY_THINK_CONTEXT );
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Sets HL2 specific defaults.
-//-----------------------------------------------------------------------------
-void CHL2MP_Player::Spawn(void)
+void CHL2MP_Player::Spawn( void )
 {
-	m_flNextModelChangeTime = 0.0f;
+	SetModel( "models/humans/group03/male_05.mdl" );
+
 	m_flNextTeamChangeTime = 0.0f;
 
 	PickDefaultSpawnTeam();
@@ -315,180 +285,32 @@ void CHL2MP_Player::Spawn(void)
 
 	m_Local.m_iHideHUD = 0;
 	
-	AddFlag(FL_ONGROUND); // set the player on the ground at the start of the round.
+	AddFlag( FL_ONGROUND ); // set the player on the ground at the start of the round.
 
 	m_impactEnergyScale = HL2MPPLAYER_PHYSDAMAGE_SCALE;
 
 	if ( HL2MPRules()->IsIntermission() )
-	{
 		AddFlag( FL_FROZEN );
-	}
 	else
-	{
 		RemoveFlag( FL_FROZEN );
-	}
 
 	m_iSpawnInterpCounter = (m_iSpawnInterpCounter + 1) % 8;
 
 	m_Local.m_bDucked = false;
 
-	SetPlayerUnderwater(false);
+	SetPlayerUnderwater( false );
 
 	m_cycleLatchTimer.Start( CYCLELATCH_UPDATE_INTERVAL );
+
+	if ( GetAnimState() )
+		GetAnimState()->ClearAnimationState();
+
+	RemoveRagdollEntity();
 
 	//Tony; do the spawn animevent
 	DoAnimationEvent( PLAYERANIMEVENT_SPAWN );
 
 	SetContextThink( &CHL2MP_Player::HL2MPPushawayThink, gpGlobals->curtime + PUSHAWAY_THINK_INTERVAL, HL2MP_PUSHAWAY_THINK_CONTEXT );
-}
-
-bool CHL2MP_Player::ValidatePlayerModel( const char *pModel )
-{
-	int iModels = ARRAYSIZE( g_ppszRandomCitizenModels );
-	int i;	
-
-	for ( i = 0; i < iModels; ++i )
-	{
-		if ( !Q_stricmp( g_ppszRandomCitizenModels[i], pModel ) )
-		{
-			return true;
-		}
-	}
-
-	iModels = ARRAYSIZE( g_ppszRandomCombineModels );
-
-	for ( i = 0; i < iModels; ++i )
-	{
-		if ( !Q_stricmp( g_ppszRandomCombineModels[i], pModel ) )
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
-void CHL2MP_Player::SetPlayerTeamModel( void )
-{
-	const char *szModelName = NULL;
-	szModelName = engine->GetClientConVarValue( engine->IndexOfEdict( edict() ), "cl_playermodel" );
-
-	int modelIndex = modelinfo->GetModelIndex( szModelName );
-
-	if ( modelIndex == -1 || ValidatePlayerModel( szModelName ) == false )
-	{
-		szModelName = "models/Combine_Soldier.mdl";
-		m_iModelType = TEAM_COMBINE;
-
-		char szReturnString[512];
-
-		Q_snprintf( szReturnString, sizeof (szReturnString ), "cl_playermodel %s\n", szModelName );
-		engine->ClientCommand ( edict(), szReturnString );
-	}
-
-	if ( GetTeamNumber() == TEAM_COMBINE )
-	{
-		if ( Q_stristr( szModelName, "models/human") )
-		{
-			int nHeads = ARRAYSIZE( g_ppszRandomCombineModels );
-		
-			g_iLastCombineModel = ( g_iLastCombineModel + 1 ) % nHeads;
-			szModelName = g_ppszRandomCombineModels[g_iLastCombineModel];
-		}
-
-		m_iModelType = TEAM_COMBINE;
-	}
-	else if ( GetTeamNumber() == TEAM_REBELS )
-	{
-		if ( !Q_stristr( szModelName, "models/human") )
-		{
-			int nHeads = ARRAYSIZE( g_ppszRandomCitizenModels );
-
-			g_iLastCitizenModel = ( g_iLastCitizenModel + 1 ) % nHeads;
-			szModelName = g_ppszRandomCitizenModels[g_iLastCitizenModel];
-		}
-
-		m_iModelType = TEAM_REBELS;
-	}
-	
-	SetModel( szModelName );
-
-	m_flNextModelChangeTime = gpGlobals->curtime + MODEL_CHANGE_INTERVAL;
-}
-
-void CHL2MP_Player::SetPlayerModel( void )
-{
-	const char *szModelName = NULL;
-	const char *pszCurrentModelName = modelinfo->GetModelName( GetModel());
-
-	szModelName = engine->GetClientConVarValue( engine->IndexOfEdict( edict() ), "cl_playermodel" );
-
-	if ( ValidatePlayerModel( szModelName ) == false )
-	{
-		char szReturnString[512];
-
-		if ( ValidatePlayerModel( pszCurrentModelName ) == false )
-		{
-			pszCurrentModelName = "models/Combine_Soldier.mdl";
-		}
-
-		Q_snprintf( szReturnString, sizeof (szReturnString ), "cl_playermodel %s\n", pszCurrentModelName );
-		engine->ClientCommand ( edict(), szReturnString );
-
-		szModelName = pszCurrentModelName;
-	}
-
-	if ( GetTeamNumber() == TEAM_COMBINE )
-	{
-		int nHeads = ARRAYSIZE( g_ppszRandomCombineModels );
-		
-		g_iLastCombineModel = ( g_iLastCombineModel + 1 ) % nHeads;
-		szModelName = g_ppszRandomCombineModels[g_iLastCombineModel];
-
-		m_iModelType = TEAM_COMBINE;
-	}
-	else if ( GetTeamNumber() == TEAM_REBELS )
-	{
-		int nHeads = ARRAYSIZE( g_ppszRandomCitizenModels );
-
-		g_iLastCitizenModel = ( g_iLastCitizenModel + 1 ) % nHeads;
-		szModelName = g_ppszRandomCitizenModels[g_iLastCitizenModel];
-
-		m_iModelType = TEAM_REBELS;
-	}
-	else
-	{
-		if ( Q_strlen( szModelName ) == 0 ) 
-		{
-			szModelName = g_ppszRandomCitizenModels[0];
-		}
-
-		if ( Q_stristr( szModelName, "models/human") )
-		{
-			m_iModelType = TEAM_REBELS;
-		}
-		else
-		{
-			m_iModelType = TEAM_COMBINE;
-		}
-	}
-
-	int modelIndex = modelinfo->GetModelIndex( szModelName );
-
-	if ( modelIndex == -1 )
-	{
-		szModelName = "models/Combine_Soldier.mdl";
-		m_iModelType = TEAM_COMBINE;
-
-		char szReturnString[512];
-
-		Q_snprintf( szReturnString, sizeof (szReturnString ), "cl_playermodel %s\n", szModelName );
-		engine->ClientCommand ( edict(), szReturnString );
-	}
-
-	SetModel( szModelName );
-
-	m_flNextModelChangeTime = gpGlobals->curtime + MODEL_CHANGE_INTERVAL;
 }
 
 void CHL2MP_Player::PreThink( void )
@@ -500,9 +322,7 @@ void CHL2MP_Player::PreThink( void )
 	vTempAngles = EyeAngles();
 
 	if ( vTempAngles[PITCH] > 180.0f )
-	{
 		vTempAngles[PITCH] -= 360.0f;
-	}
 
 	SetLocalAngles( vTempAngles );
 
@@ -518,11 +338,6 @@ void CHL2MP_Player::PreThink( void )
 void CHL2MP_Player::PostThink( void )
 {
 	BaseClass::PostThink();
-	
-	if ( GetFlags() & FL_DUCKING )
-	{
-		SetCollisionBounds( VEC_CROUCH_TRACE_MIN, VEC_CROUCH_TRACE_MAX );
-	}
 
 	QAngle angles = GetLocalAngles();
 	angles[PITCH] = 0;
@@ -530,11 +345,14 @@ void CHL2MP_Player::PostThink( void )
 
 	// Store the eye angles pitch so the client can compute its animation state correctly.
 	m_angEyeAngles = EyeAngles();
-	m_PlayerAnimState->Update( m_angEyeAngles[YAW], m_angEyeAngles[PITCH] );
+
+	if ( GetAnimState() )
+		GetAnimState()->Update( m_angEyeAngles[YAW], m_angEyeAngles[PITCH] );
 
 	if ( IsAlive() && m_cycleLatchTimer.IsElapsed() )
 	{
 		m_cycleLatchTimer.Start( CYCLELATCH_UPDATE_INTERVAL );
+
 		// Compress the cycle into 4 bits. Can represent 0.0625 in steps which is enough.
 		m_cycleLatch.GetForModify() = 16 * GetCycle();
 	}
@@ -543,9 +361,7 @@ void CHL2MP_Player::PostThink( void )
 void CHL2MP_Player::PlayerDeathThink()
 {
 	if( !IsObserver() )
-	{
 		BaseClass::PlayerDeathThink();
-	}
 }
 
 void CHL2MP_Player::FireBullets ( const FireBulletsInfo_t &info )
@@ -556,11 +372,8 @@ void CHL2MP_Player::FireBullets ( const FireBulletsInfo_t &info )
 	FireBulletsInfo_t modinfo = info;
 
 	CWeaponHL2MPBase *pWeapon = dynamic_cast<CWeaponHL2MPBase *>( GetActiveWeapon() );
-
 	if ( pWeapon )
-	{
 		modinfo.m_iPlayerDamage = modinfo.m_flDamage = pWeapon->GetHL2MPWpnData().m_iPlayerDamage;
-	}
 
 	NoteWeaponFired();
 
@@ -574,9 +387,7 @@ void CHL2MP_Player::NoteWeaponFired( void )
 {
 	Assert( m_pCurrentCommand );
 	if( m_pCurrentCommand )
-	{
 		m_iLastWeaponFireUsercmd = m_pCurrentCommand->command_number;
-	}
 }
 
 bool CHL2MP_Player::WantsLagCompensationOnEntity( const CBasePlayer *pPlayer, const CUserCmd *pCmd, const CBitVec<MAX_EDICTS> *pEntityTransmitBits ) const
@@ -587,23 +398,6 @@ bool CHL2MP_Player::WantsLagCompensationOnEntity( const CBasePlayer *pPlayer, co
 		return false;
 
 	return BaseClass::WantsLagCompensationOnEntity( pPlayer, pCmd, pEntityTransmitBits );
-}
-
-Activity CHL2MP_Player::TranslateTeamActivity( Activity ActToTranslate )
-{
-	if ( m_iModelType == TEAM_COMBINE )
-		 return ActToTranslate;
-	
-	if ( ActToTranslate == ACT_RUN )
-		 return ACT_RUN_AIM_AGITATED;
-
-	if ( ActToTranslate == ACT_IDLE )
-		 return ACT_IDLE_AIM_AGITATED;
-
-	if ( ActToTranslate == ACT_WALK )
-		 return ACT_WALK_AIM_AGITATED;
-
-	return ActToTranslate;
 }
 
 //-----------------------------------------------------------------------------
@@ -622,17 +416,14 @@ bool CHL2MP_Player::BumpWeapon( CBaseCombatWeapon *pWeapon )
 	if ( pOwner || !Weapon_CanUse( pWeapon ) || !g_pGameRules->CanHavePlayerItem( this, pWeapon ) )
 	{
 		if ( gEvilImpulse101 )
-		{
 			UTIL_Remove( pWeapon );
-		}
+
 		return false;
 	}
 
 	// Don't let the player fetch weapons through walls (use MASK_SOLID so that you can't pickup through windows)
 	if( !pWeapon->FVisible( this, MASK_SOLID ) && !(GetFlags() & FL_NOTARGET) )
-	{
 		return false;
-	}
 
 	bool bOwnsWeaponAlready = !!Weapon_OwnsThisType( pWeapon->GetClassname(), pWeapon->GetSubType());
 
@@ -647,9 +438,7 @@ bool CHL2MP_Player::BumpWeapon( CBaseCombatWeapon *pWeapon )
 			 return true;
 		 }
 		 else
-		 {
 			 return false;
-		 }
 	}
 
 	pWeapon->CheckRespawn();
@@ -660,43 +449,20 @@ bool CHL2MP_Player::BumpWeapon( CBaseCombatWeapon *pWeapon )
 
 void CHL2MP_Player::ChangeTeam( int iTeam )
 {
-/*	if ( GetNextTeamChangeTime() >= gpGlobals->curtime )
-	{
-		char szReturnString[128];
-		Q_snprintf( szReturnString, sizeof( szReturnString ), "Please wait %d more seconds before trying to switch teams again.\n", (int)(GetNextTeamChangeTime() - gpGlobals->curtime) );
-
-		ClientPrint( this, HUD_PRINTTALK, szReturnString );
-		return;
-	}*/
-
 	bool bKill = false;
 
 	if ( HL2MPRules()->IsTeamplay() != true && iTeam != TEAM_SPECTATOR )
-	{
-		//don't let them try to join combine or rebels during deathmatch.
-		iTeam = TEAM_UNASSIGNED;
-	}
+		iTeam = TEAM_UNASSIGNED;	//don't let them try to join combine or rebels during deathmatch.
 
 	if ( HL2MPRules()->IsTeamplay() == true )
 	{
 		if ( iTeam != GetTeamNumber() && GetTeamNumber() != TEAM_UNASSIGNED )
-		{
 			bKill = true;
-		}
 	}
 
 	BaseClass::ChangeTeam( iTeam );
 
 	m_flNextTeamChangeTime = gpGlobals->curtime + TEAM_CHANGE_INTERVAL;
-
-	if ( HL2MPRules()->IsTeamplay() == true )
-	{
-		SetPlayerTeamModel();
-	}
-	else
-	{
-		SetPlayerModel();
-	}
 
 	if ( iTeam == TEAM_SPECTATOR )
 	{
@@ -706,9 +472,7 @@ void CHL2MP_Player::ChangeTeam( int iTeam )
 	}
 
 	if ( bKill == true )
-	{
 		CommitSuicide();
-	}
 }
 
 bool CHL2MP_Player::HandleCommand_JoinTeam( int team )
@@ -829,50 +593,9 @@ bool CHL2MP_Player::BecomeRagdollOnClient( const Vector &force )
 	return true;
 }
 
-// -------------------------------------------------------------------------------- //
-// Ragdoll entities.
-// -------------------------------------------------------------------------------- //
-
-class CHL2MPRagdoll : public CBaseAnimatingOverlay
-{
-public:
-	DECLARE_CLASS( CHL2MPRagdoll, CBaseAnimatingOverlay );
-	DECLARE_SERVERCLASS();
-
-	// Transmit ragdolls to everyone.
-	virtual int UpdateTransmitState()
-	{
-		return SetTransmitState( FL_EDICT_ALWAYS );
-	}
-
-public:
-	// In case the client has the player entity, we transmit the player index.
-	// In case the client doesn't have it, we transmit the player's model index, origin, and angles
-	// so they can create a ragdoll in the right place.
-	CNetworkHandle( CBaseEntity, m_hPlayer );	// networked entity handle 
-	CNetworkVector( m_vecRagdollVelocity );
-	CNetworkVector( m_vecRagdollOrigin );
-};
-
-LINK_ENTITY_TO_CLASS( hl2mp_ragdoll, CHL2MPRagdoll );
-
-IMPLEMENT_SERVERCLASS_ST_NOBASE( CHL2MPRagdoll, DT_HL2MPRagdoll )
-	SendPropVector( SENDINFO(m_vecRagdollOrigin), -1,  SPROP_COORD ),
-	SendPropEHandle( SENDINFO( m_hPlayer ) ),
-	SendPropModelIndex( SENDINFO( m_nModelIndex ) ),
-	SendPropInt		( SENDINFO(m_nForceBone), 8, 0 ),
-	SendPropVector	( SENDINFO(m_vecForce), -1, SPROP_NOSCALE ),
-	SendPropVector( SENDINFO( m_vecRagdollVelocity ) )
-END_SEND_TABLE()
-
-
 void CHL2MP_Player::CreateRagdollEntity( void )
 {
-	if ( m_hRagdoll )
-	{
-		UTIL_RemoveImmediate( m_hRagdoll );
-		m_hRagdoll = NULL;
-	}
+	RemoveRagdollEntity();
 
 	// If we already have a ragdoll, don't make another one.
 	CHL2MPRagdoll *pRagdoll = dynamic_cast< CHL2MPRagdoll* >( m_hRagdoll.Get() );
@@ -898,17 +621,11 @@ void CHL2MP_Player::CreateRagdollEntity( void )
 	m_hRagdoll = pRagdoll;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 int CHL2MP_Player::FlashlightIsOn( void )
 {
 	return IsEffectActive( EF_DIMLIGHT );
 }
 
-extern ConVar flashlight;
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CHL2MP_Player::FlashlightTurnOn( void )
 {
 	if( flashlight.GetInt() > 0 && IsAlive() )
@@ -918,9 +635,6 @@ void CHL2MP_Player::FlashlightTurnOn( void )
 	}
 }
 
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CHL2MP_Player::FlashlightTurnOff( void )
 {
 	RemoveEffects( EF_DIMLIGHT );
@@ -940,6 +654,9 @@ void CHL2MP_Player::Event_Killed( const CTakeDamageInfo &info )
 	// Note: since we're dead, it won't draw us on the client, but we don't set EF_NODRAW
 	// because we still want to transmit to the clients in our PVS.
 	CreateRagdollEntity();
+
+	// ...and employ a minor hack to stop CBaseCombatCharacter creating its own
+	const_cast<CTakeDamageInfo*>( &info )->AddDamageType( DMG_REMOVENORAGDOLL );
 
 	BaseClass::Event_Killed( subinfo );
 
@@ -1075,6 +792,115 @@ ReturnSpot:
 	return pSpot;
 } 
 
+bool CHL2MP_Player::StartObserverMode(int mode)
+{
+	//we only want to go into observer mode if the player asked to, not on a death timeout
+	if ( m_bEnterObserver == true )
+	{
+		VPhysicsDestroyObject();
+		return BaseClass::StartObserverMode( mode );
+	}
+	return false;
+}
+
+void CHL2MP_Player::StopObserverMode()
+{
+	m_bEnterObserver = false;
+	BaseClass::StopObserverMode();
+}
+
+void CHL2MP_Player::State_Enter_OBSERVER_MODE()
+{
+	int observerMode = m_iObserverLastMode;
+	if ( IsNetClient() )
+	{
+		const char *pIdealMode = engine->GetClientConVarValue( engine->IndexOfEdict( edict() ), "cl_spec_mode" );
+		if ( pIdealMode )
+		{
+			observerMode = atoi( pIdealMode );
+			if ( observerMode <= OBS_MODE_FIXED || observerMode > OBS_MODE_ROAMING )
+			{
+				observerMode = m_iObserverLastMode;
+			}
+		}
+	}
+	m_bEnterObserver = true;
+	StartObserverMode( observerMode );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Override setup bones so that is uses the render angles from
+//			the HL2MP animation state to setup the hitboxes.
+//-----------------------------------------------------------------------------
+void CHL2MP_Player::SetupBones( matrix3x4_t *pBoneToWorld, int boneMask )
+{
+	VPROF_BUDGET( "CHL2MP_Player::SetupBones", VPROF_BUDGETGROUP_SERVER_ANIM );
+
+	// Set the mdl cache semaphore.
+	MDLCACHE_CRITICAL_SECTION();
+
+	// Get the studio header.
+	Assert( GetModelPtr() );
+	CStudioHdr *pStudioHdr = GetModelPtr( );
+	if ( !pStudioHdr )
+		return;
+
+	Vector pos[MAXSTUDIOBONES];
+	Quaternion q[MAXSTUDIOBONES];
+
+	// Adjust hit boxes based on IK driven offset.
+	Vector adjOrigin = GetAbsOrigin() + Vector( 0, 0, m_flEstIkOffset );
+
+	// FIXME: pass this into Studio_BuildMatrices to skip transforms
+	CBoneBitList boneComputed;
+	if ( m_pIk )
+	{
+		m_iIKCounter++;
+		m_pIk->Init( pStudioHdr, GetAbsAngles(), adjOrigin, gpGlobals->curtime, m_iIKCounter, boneMask );
+		GetSkeleton( pStudioHdr, pos, q, boneMask );
+
+		m_pIk->UpdateTargets( pos, q, pBoneToWorld, boneComputed );
+		CalculateIKLocks( gpGlobals->curtime );
+		m_pIk->SolveDependencies( pos, q, pBoneToWorld, boneComputed );
+	}
+	else
+	{
+		GetSkeleton( pStudioHdr, pos, q, boneMask );
+	}
+
+	CBaseAnimating *pParent = dynamic_cast< CBaseAnimating* >( GetMoveParent() );
+	if ( pParent )
+	{
+		// We're doing bone merging, so do special stuff here.
+		CBoneCache *pParentCache = pParent->GetBoneCache();
+		if ( pParentCache )
+		{
+			BuildMatricesWithBoneMerge( 
+				pStudioHdr, 
+				GetAnimState()->GetRenderAngles(),
+				adjOrigin, 
+				pos, 
+				q, 
+				pBoneToWorld, 
+				pParent, 
+				pParentCache );
+
+			return;
+		}
+	}
+
+	Studio_BuildMatrices( 
+		pStudioHdr, 
+		GetAnimState()->GetRenderAngles(),
+		adjOrigin, 
+		pos, 
+		q, 
+		-1,
+		GetModelScale(), // Scaling
+		pBoneToWorld,
+		boneMask );
+}
+
 void CHL2MP_Player::State_Transition( HL2MPPlayerState newState )
 {
 	State_Leave();
@@ -1129,42 +955,6 @@ CHL2MPPlayerStateInfo *CHL2MP_Player::State_LookupInfo( HL2MPPlayerState state )
 	return NULL;
 }
 
-bool CHL2MP_Player::StartObserverMode(int mode)
-{
-	//we only want to go into observer mode if the player asked to, not on a death timeout
-	if ( m_bEnterObserver == true )
-	{
-		VPhysicsDestroyObject();
-		return BaseClass::StartObserverMode( mode );
-	}
-	return false;
-}
-
-void CHL2MP_Player::StopObserverMode()
-{
-	m_bEnterObserver = false;
-	BaseClass::StopObserverMode();
-}
-
-void CHL2MP_Player::State_Enter_OBSERVER_MODE()
-{
-	int observerMode = m_iObserverLastMode;
-	if ( IsNetClient() )
-	{
-		const char *pIdealMode = engine->GetClientConVarValue( engine->IndexOfEdict( edict() ), "cl_spec_mode" );
-		if ( pIdealMode )
-		{
-			observerMode = atoi( pIdealMode );
-			if ( observerMode <= OBS_MODE_FIXED || observerMode > OBS_MODE_ROAMING )
-			{
-				observerMode = m_iObserverLastMode;
-			}
-		}
-	}
-	m_bEnterObserver = true;
-	StartObserverMode( observerMode );
-}
-
 void CHL2MP_Player::State_PreThink_OBSERVER_MODE()
 {
 	// Make sure nobody has changed any of our state.
@@ -1190,122 +980,8 @@ void CHL2MP_Player::State_Enter_ACTIVE()
 	m_Local.m_iHideHUD = 0;
 }
 
-
 void CHL2MP_Player::State_PreThink_ACTIVE()
 {
 	//we don't really need to do anything here. 
 	//This state_prethink structure came over from CS:S and was doing an assert check that fails the way hl2dm handles death
 }
-
-// -------------------------------------------------------------------------------- //
-// Player animation event. Sent to the client when a player fires, jumps, reloads, etc..
-// -------------------------------------------------------------------------------- //
-class CTEPlayerAnimEvent : public CBaseTempEntity
-{
-public:
-	DECLARE_CLASS( CTEPlayerAnimEvent, CBaseTempEntity );
-	DECLARE_SERVERCLASS();
-
-	CTEPlayerAnimEvent( const char *name ) : CBaseTempEntity( name )
-	{
-	}
-
-	CNetworkHandle( CBasePlayer, m_hPlayer );
-	CNetworkVar( int, m_iEvent );
-	CNetworkVar( int, m_nData );
-};
-
-IMPLEMENT_SERVERCLASS_ST_NOBASE( CTEPlayerAnimEvent, DT_TEPlayerAnimEvent )
-	SendPropEHandle( SENDINFO( m_hPlayer ) ),
-	SendPropInt( SENDINFO( m_iEvent ), Q_log2( PLAYERANIMEVENT_COUNT ) + 1, SPROP_UNSIGNED ),
-	SendPropInt( SENDINFO( m_nData ), 32 )
-END_SEND_TABLE()
-
-static CTEPlayerAnimEvent g_TEPlayerAnimEvent( "PlayerAnimEvent" );
-
-void TE_PlayerAnimEvent( CBasePlayer *pPlayer, PlayerAnimEvent_t event, int nData )
-{
-	CPVSFilter filter( (const Vector&)pPlayer->EyePosition() );
-
-	//Tony; use prediction rules.
-	filter.UsePredictionRules();
-	
-	g_TEPlayerAnimEvent.m_hPlayer = pPlayer;
-	g_TEPlayerAnimEvent.m_iEvent = event;
-	g_TEPlayerAnimEvent.m_nData = nData;
-	g_TEPlayerAnimEvent.Create( filter, 0 );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Override setup bones so that is uses the render angles from
-//			the HL2MP animation state to setup the hitboxes.
-//-----------------------------------------------------------------------------
-void CHL2MP_Player::SetupBones( matrix3x4_t *pBoneToWorld, int boneMask )
-{
-	VPROF_BUDGET( "CHL2MP_Player::SetupBones", VPROF_BUDGETGROUP_SERVER_ANIM );
-
-	// Set the mdl cache semaphore.
-	MDLCACHE_CRITICAL_SECTION();
-
-	// Get the studio header.
-	Assert( GetModelPtr() );
-	CStudioHdr *pStudioHdr = GetModelPtr( );
-	if ( !pStudioHdr )
-		return;
-
-	Vector pos[MAXSTUDIOBONES];
-	Quaternion q[MAXSTUDIOBONES];
-
-	// Adjust hit boxes based on IK driven offset.
-	Vector adjOrigin = GetAbsOrigin() + Vector( 0, 0, m_flEstIkOffset );
-
-	// FIXME: pass this into Studio_BuildMatrices to skip transforms
-	CBoneBitList boneComputed;
-	if ( m_pIk )
-	{
-		m_iIKCounter++;
-		m_pIk->Init( pStudioHdr, GetAbsAngles(), adjOrigin, gpGlobals->curtime, m_iIKCounter, boneMask );
-		GetSkeleton( pStudioHdr, pos, q, boneMask );
-
-		m_pIk->UpdateTargets( pos, q, pBoneToWorld, boneComputed );
-		CalculateIKLocks( gpGlobals->curtime );
-		m_pIk->SolveDependencies( pos, q, pBoneToWorld, boneComputed );
-	}
-	else
-	{
-		GetSkeleton( pStudioHdr, pos, q, boneMask );
-	}
-
-	CBaseAnimating *pParent = dynamic_cast< CBaseAnimating* >( GetMoveParent() );
-	if ( pParent )
-	{
-		// We're doing bone merging, so do special stuff here.
-		CBoneCache *pParentCache = pParent->GetBoneCache();
-		if ( pParentCache )
-		{
-			BuildMatricesWithBoneMerge( 
-				pStudioHdr, 
-				m_PlayerAnimState->GetRenderAngles(),
-				adjOrigin, 
-				pos, 
-				q, 
-				pBoneToWorld, 
-				pParent, 
-				pParentCache );
-
-			return;
-		}
-	}
-
-	Studio_BuildMatrices( 
-		pStudioHdr, 
-		m_PlayerAnimState->GetRenderAngles(),
-		adjOrigin, 
-		pos, 
-		q, 
-		-1,
-		GetModelScale(), // Scaling
-		pBoneToWorld,
-		boneMask );
-}
-

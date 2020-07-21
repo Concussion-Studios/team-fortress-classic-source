@@ -20,10 +20,9 @@ class CHL2MP_Player;
 #include "hl2mp_player_shared.h"
 #include "hl2mp_gamerules.h"
 #include "utldict.h"
+#include "baseanimatingoverlay.h"
+#include "basetempentity.h"
 
-//=============================================================================
-// >> HL2MP_Player
-//=============================================================================
 class CHL2MPPlayerStateInfo
 {
 public:
@@ -36,6 +35,46 @@ public:
 	void (CHL2MP_Player::*pfnPreThink)();	// Do a PreThink() in this state.
 };
 
+// -------------------------------------------------------------------------------- //
+// Player animation event. Sent to the client when a player fires, jumps, reloads, etc..
+// -------------------------------------------------------------------------------- //
+class CTEPlayerAnimEvent : public CBaseTempEntity
+{
+public:
+	DECLARE_CLASS( CTEPlayerAnimEvent, CBaseTempEntity );
+	DECLARE_SERVERCLASS();
+
+	CTEPlayerAnimEvent( const char *name ) : CBaseTempEntity( name ) {}
+
+	CNetworkHandle( CBasePlayer, m_hPlayer );
+	CNetworkVar( int, m_iEvent );
+	CNetworkVar( int, m_nData );
+};
+
+// -------------------------------------------------------------------------------- //
+// Ragdoll entities.
+// -------------------------------------------------------------------------------- //
+class CHL2MPRagdoll : public CBaseAnimatingOverlay
+{
+public:
+	DECLARE_CLASS( CHL2MPRagdoll, CBaseAnimatingOverlay );
+	DECLARE_SERVERCLASS();
+
+	// Transmit ragdolls to everyone.
+	virtual int UpdateTransmitState() { return SetTransmitState( FL_EDICT_ALWAYS ); }
+
+public:
+	// In case the client has the player entity, we transmit the player index.
+	// In case the client doesn't have it, we transmit the player's model index, origin, and angles
+	// so they can create a ragdoll in the right place.
+	CNetworkHandle( CBaseEntity, m_hPlayer );	// networked entity handle 
+	CNetworkVector( m_vecRagdollVelocity );
+	CNetworkVector( m_vecRagdollOrigin );
+};
+
+// -------------------------------------------------------------------------------- //
+// Player Class.
+// -------------------------------------------------------------------------------- //
 class CHL2MP_Player : public CHL2_Player
 {
 public:
@@ -55,7 +94,7 @@ public:
 	DECLARE_PREDICTABLE();
 
 	// This passes the event to the client's and server's CHL2MPPlayerAnimState.
-	void			SetupBones( matrix3x4_t *pBoneToWorld, int boneMask );
+	void SetupBones( matrix3x4_t *pBoneToWorld, int boneMask );
 
 	virtual void Precache( void );
 	virtual void Spawn( void );
@@ -78,20 +117,15 @@ public:
 	int FlashlightIsOn( void );
 	void FlashlightTurnOn( void );
 	void FlashlightTurnOff( void );
-	bool	ValidatePlayerModel( const char *pModel );
 
 	void CheatImpulseCommands( int iImpulse );
+	void RemoveRagdollEntity();
 	void CreateRagdollEntity( void );
 	void GiveAllItems( void );
 	void GiveDefaultItems( void );
 
 	void NoteWeaponFired( void );
-
-	void SetPlayerModel( void );
-	void SetPlayerTeamModel( void );
-	Activity TranslateTeamActivity( Activity ActToTranslate );
 	
-	float GetNextModelChangeTime( void ) { return m_flNextModelChangeTime; }
 	float GetNextTeamChangeTime( void ) { return m_flNextTeamChangeTime; }
 	void  PickDefaultSpawnTeam( void );
 
@@ -120,12 +154,12 @@ public:
 // shared code
 public:
 
+	virtual CHL2MPPlayerAnimState* GetAnimState() { return m_PlayerAnimState; }
+
 	Vector GetAttackSpread( CBaseCombatWeapon *pWeapon, CBaseEntity *pTarget = NULL );
 	virtual Vector GetAutoaimVector( float flDelta );
 	virtual void TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 	void DoAnimationEvent( PlayerAnimEvent_t event, int nData = 0 );
-	//Tony; when model is changed, need to init some stuff.
-	virtual CStudioHdr *OnNewModel( void );
 	void SetAnimation( PLAYER_ANIM playerAnim );
 	bool ShouldCollide( int collisionGroup, int contentsMask ) const;
 
@@ -136,10 +170,8 @@ private:
 	CNetworkQAngle( m_angEyeAngles );
 
 	int m_iLastWeaponFireUsercmd;
-	int m_iModelType;
 	CNetworkVar( int, m_iSpawnInterpCounter );
 
-	float m_flNextModelChangeTime;
 	float m_flNextTeamChangeTime;
 
 	HL2MPPlayerState m_iPlayerState;

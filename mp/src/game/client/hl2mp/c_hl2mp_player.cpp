@@ -21,6 +21,7 @@
 #include "collisionutils.h"
 #include "c_team.h"
 #include "obstacle_pushaway.h"
+#include "view_scene.h" // for tone mapping reset
 
 // Don't alias here
 #if defined( CHL2MP_Player )
@@ -30,9 +31,8 @@
 #define FLASHLIGHT_DISTANCE 1000
 #define CYCLELATCH_TOLERANCE		0.15f
 
-//-----------------------------------------------------------------------------
-// Purpose: C_TEPlayerAnimEvent Implementation
-//-----------------------------------------------------------------------------
+//* **************** CTEPlayerAnimEvent* *********************
+
 IMPLEMENT_CLIENTCLASS_EVENT( C_TEPlayerAnimEvent, DT_TEPlayerAnimEvent, CTEPlayerAnimEvent );
 
 BEGIN_RECV_TABLE_NOBASE( C_TEPlayerAnimEvent, DT_TEPlayerAnimEvent )
@@ -49,9 +49,8 @@ void C_TEPlayerAnimEvent::PostDataUpdate( DataUpdateType_t updateType )
 		pPlayer->DoAnimationEvent( (PlayerAnimEvent_t)m_iEvent.Get(), m_nData );
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: C_HL2MPRagdoll Implementation
-//-----------------------------------------------------------------------------
+//* **************** CHL2MPRagdoll* *********************
+
 IMPLEMENT_CLIENTCLASS_DT_NOBASE( C_HL2MPRagdoll, DT_HL2MPRagdoll, CHL2MPRagdoll )
 	RecvPropVector( RECVINFO(m_vecRagdollOrigin) ),
 	RecvPropEHandle( RECVINFO( m_hPlayer ) ),
@@ -285,9 +284,7 @@ void C_HL2MPRagdoll::SetupWeights( const matrix3x4_t *pBoneToWorld, int nFlexWei
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: C_HL2MP_Player Implementation
-//-----------------------------------------------------------------------------
+//* **************** C_HL2MP_Player* *********************
 
 LINK_ENTITY_TO_CLASS( player, C_HL2MP_Player );
 
@@ -321,9 +318,6 @@ BEGIN_PREDICTION_DATA( C_HL2MP_Player )
 	DEFINE_PRED_FIELD( m_nNewSequenceParity, FIELD_INTEGER, FTYPEDESC_OVERRIDE | FTYPEDESC_PRIVATE | FTYPEDESC_NOERRORCHECK ),
 END_PREDICTION_DATA()
 
-static ConVar cl_playermodel( "cl_playermodel", "none", FCVAR_USERINFO | FCVAR_ARCHIVE | FCVAR_SERVER_CAN_EXECUTE, "Default Player Model");
-static ConVar cl_defaultweapon( "cl_defaultweapon", "weapon_physcannon", FCVAR_USERINFO | FCVAR_ARCHIVE, "Default Spawn Weapon");
-
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
@@ -335,6 +329,7 @@ C_HL2MP_Player::C_HL2MP_Player() : m_iv_angEyeAngles( "C_HL2MP_Player::m_iv_angE
 	AddVar( &m_angEyeAngles, &m_iv_angEyeAngles, LATCH_SIMULATION_VAR );
 
 	m_PlayerAnimState = CreateHL2MPPlayerAnimState( this );
+	SetPredictionEligible( true );
 
 	m_blinkTimer.Invalidate();
 
@@ -349,7 +344,25 @@ C_HL2MP_Player::C_HL2MP_Player() : m_iv_angEyeAngles( "C_HL2MP_Player::m_iv_angE
 C_HL2MP_Player::~C_HL2MP_Player( void )
 {
 	ReleaseFlashlight();
-	m_PlayerAnimState->Release();
+	GetAnimState()->Release();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+CStudioHdr *C_HL2MP_Player::OnNewModel( void )
+{
+	CStudioHdr *pHdr = BaseClass::OnNewModel();
+	if ( pHdr )
+	{
+		InitializePoseParams();
+
+		// Reset the players animation states, gestures
+		if ( GetAnimState() )
+			GetAnimState()->OnNewModel();
+	}
+
+	return pHdr;
 }
 
 //-----------------------------------------------------------------------------
@@ -377,11 +390,8 @@ void C_HL2MP_Player::UpdateIDTarget()
 	if ( !tr.startsolid && tr.DidHitNonWorldEntity() )
 	{
 		C_BaseEntity *pEntity = tr.m_pEnt;
-
 		if ( pEntity && (pEntity != this) )
-		{
 			m_iIDEntIndex = pEntity->entindex();
-		}
 	}
 }
 
@@ -724,10 +734,10 @@ ShadowType_t C_HL2MP_Player::ShadowCastType( void )
 //-----------------------------------------------------------------------------
 const QAngle& C_HL2MP_Player::GetRenderAngles()
 {
-	if ( IsRagdoll() )
+	if ( IsRagdoll() || !GetAnimState() )
 		return vec3_angle;
 	else
-		return m_PlayerAnimState->GetRenderAngles();
+		return GetAnimState()->GetRenderAngles();
 }
 
 //-----------------------------------------------------------------------------
@@ -783,14 +793,35 @@ void C_HL2MP_Player::OnDataChanged( DataUpdateType_t type )
 //-----------------------------------------------------------------------------
 void C_HL2MP_Player::PostDataUpdate( DataUpdateType_t updateType )
 {
+	// C_BaseEntity assumes we're networking the entity's angles, so pretend that it
+	// networked the same value we already have.
+	SetNetworkAngles( GetLocalAngles() );
+
+	// Did we just respawn?
 	if ( m_iSpawnInterpCounter != m_iSpawnInterpCounterCache )
-	{
-		MoveToLastReceivedPosition( true );
-		ResetLatched();
-		m_iSpawnInterpCounterCache = m_iSpawnInterpCounter;
-	}
+		Respawn();
 
 	BaseClass::PostDataUpdate( updateType );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void C_HL2MP_Player::Respawn()
+{
+	// fix up interp
+	MoveToLastReceivedPosition( true );
+	ResetLatched();
+	m_iSpawnInterpCounterCache = m_iSpawnInterpCounter;
+
+	RemoveAllDecals();
+
+	if ( GetAnimState() )
+		GetAnimState()->ClearAnimationState();
+	
+	// reset HDR
+	if ( IsLocalPlayer() )
+		ResetToneMapping( 1.0 );
 }
 
 //-----------------------------------------------------------------------------
@@ -930,7 +961,8 @@ IRagdoll* C_HL2MP_Player::GetRepresentativeRagdoll() const
 //-----------------------------------------------------------------------------
 void C_HL2MP_Player::UpdateClientSideAnimation()
 {
-	m_PlayerAnimState->Update( EyeAngles()[YAW], EyeAngles()[PITCH] );
+	if ( GetAnimState() )
+		GetAnimState()->Update(EyeAngles()[YAW], EyeAngles()[PITCH]);
 
 	BaseClass::UpdateClientSideAnimation();
 }
