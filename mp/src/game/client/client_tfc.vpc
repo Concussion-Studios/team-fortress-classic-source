@@ -210,4 +210,9 @@ $Project "Client"
 			}
 		}
 	}
+	
+	$Folder	"Link Libraries"
+	{
+		$Lib		raytrace
+ 	}
 }
